@@ -1,33 +1,52 @@
-{% extends "base.html" %}
+{% extends "admin_base.html" %}
+
 {% block content %}
-    <h2>👥 User Management</h2>
-    <table>
+<h2 style="margin-bottom: 20px; color: #1e293b;">👥 User Management List</h2>
+
+<div style="background: white; padding: 20px; border-radius: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); overflow-x: auto;">
+    <table style="width: 100%; border-collapse: collapse;">
         <thead>
-            <tr>
-                <th>ID</th>
-                <th>Username</th>
-                <th>Balance</th>
-                <th>Status</th>
-                <th>Action</th>
+            <tr style="background: #f8fafc; text-align: left;">
+                <th style="padding: 12px;">ID</th>
+                <th style="padding: 12px;">Username</th>
+                <th style="padding: 12px;">Balance</th>
+                <th style="padding: 12px;">Role</th>
+                <th style="padding: 12px;">Status</th>
+                <th style="padding: 12px;">Actions</th>
             </tr>
         </thead>
         <tbody>
             {% for user in users %}
-            <tr>
-                <td>{{ user.id }}</td>
-                <td><a href="{{ url_for('admin_user_profile', user_id=user.id) }}" style="font-weight: bold;">{{ user.username }}</a></td>
-                <td>{{ user.coins }}</td>
-                <td>
-                    {% if user.is_banned %} <span class="status-banned">BANNED</span>
-                    {% else %} <span class="status-confirmed">Active</span> {% endif %}
+            <tr style="border-bottom: 1px solid #e2e8f0;">
+                <td style="padding: 12px;">#{{ user.id }}</td>
+                <td style="padding: 12px;">
+                    <a href="{{ url_for('admin_user_profile', user_id=user.id) }}" style="color: #2563eb; font-weight: 600; text-decoration: none;">
+                        {{ user.username }}
+                    </a>
                 </td>
-                <td>
-                    <a href="{{ url_for('admin_user_profile', user_id=user.id) }}" class="btn">View Profile</a>
+                <td style="padding: 12px; font-weight: bold; color: #d97706;">{{ user.coins }}</td>
+                <td style="padding: 12px;">
+                    {% if user.is_admin %}
+                        <span style="background: #e0e7ff; color: #3730a3; padding: 2px 8px; border-radius: 4px; font-size: 12px; font-weight: bold;">Admin</span>
+                    {% else %}
+                        <span style="background: #f1f5f9; color: #475569; padding: 2px 8px; border-radius: 4px; font-size: 12px;">User</span>
+                    {% endif %}
+                </td>
+                <td style="padding: 12px;">
+                    {% if user.is_banned %}
+                        <span style="color: #dc2626; font-weight: bold; background: #fee2e2; padding: 2px 8px; border-radius: 10px; font-size: 12px;">BANNED</span>
+                    {% else %}
+                        <span style="color: #16a34a; font-weight: bold; background: #dcfce7; padding: 2px 8px; border-radius: 10px; font-size: 12px;">Active</span>
+                    {% endif %}
+                </td>
+                <td style="padding: 12px;">
+                    <a href="{{ url_for('admin_user_profile', user_id=user.id) }}" class="btn" style="background: #64748b; font-size: 12px; padding: 5px 10px;">View</a>
+                    
                     {% if not user.is_admin %}
                         {% if user.is_banned %}
-                            <a href="{{ url_for('ban_user', user_id=user.id, action='unban') }}" class="btn" style="background: green;">Unban</a>
+                            <a href="{{ url_for('ban_user', user_id=user.id, action='unban') }}" class="btn" style="background: #10b981; font-size: 12px; padding: 5px 10px;">Unban</a>
                         {% else %}
-                            <a href="{{ url_for('ban_user', user_id=user.id, action='ban') }}" class="btn" style="background: red;">Ban</a>
+                            <a href="{{ url_for('ban_user', user_id=user.id, action='ban') }}" class="btn" style="background: #ef4444; font-size: 12px; padding: 5px 10px;">Ban</a>
                         {% endif %}
                     {% endif %}
                 </td>
@@ -35,4 +54,5 @@
             {% endfor %}
         </tbody>
     </table>
+</div>
 {% endblock %}
