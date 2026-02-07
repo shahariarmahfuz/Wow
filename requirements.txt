@@ -7,4 +7,3 @@ opencv-python-headless
 psycopg2-binary
 gunicorn
 werkzeug
-opencv-python
