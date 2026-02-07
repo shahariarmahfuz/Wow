@@ -1,32 +1,232 @@
 {% extends "base.html" %}
 {% block content %}
-    <h2>User Dashboard</h2>
-    <div style="display: flex; gap: 20px; flex-wrap: wrap; margin-bottom: 30px;">
-        <div style="flex: 1; min-width: 200px; background: #e3f2fd; padding: 20px; border-radius: 8px; text-align: center;">
-            <h3 style="margin: 0; color: #0277bd;">Active Balance</h3>
-            <h1 style="margin: 10px 0;">{{ active_balance }}</h1>
-            <small>Available to Withdraw</small>
-        </div>
 
-        <div style="flex: 1; min-width: 200px; background: #fff3cd; padding: 20px; border-radius: 8px; text-align: center;">
-            <h3 style="margin: 0; color: #856404;">Hold Balance</h3>
-            <h1 style="margin: 10px 0;">{{ hold_balance }}</h1>
-            <small>Pending Tasks * 10</small>
-        </div>
+<style>
+  /* --- Compact Mobile-first Dashboard --- */
+  .dash-wrap{ padding: 6px 0; }
 
-        <div style="flex: 1; min-width: 200px; background: #d4edda; padding: 20px; border-radius: 8px; text-align: center;">
-            <h3 style="margin: 0; color: #155724;">Total Earned</h3>
-            <h1 style="margin: 10px 0;">{{ total_earned }}</h1>
-            <small>Lifetime Earnings</small>
-        </div>
+  .dash-title{
+    font-size: 16px;
+    font-weight: 800;
+    margin: 4px 0 10px;
+    color: #111827;
+    letter-spacing: .2px;
+  }
 
-        <div style="flex: 1; min-width: 200px; background: #f8d7da; padding: 20px; border-radius: 8px; text-align: center;">
-            <h3 style="margin: 0; color: #721c24;">Total Withdrawn</h3>
-            <h1 style="margin: 10px 0;">{{ total_withdrawn }}</h1>
-            <small>Approved + Pending</small>
+  /* 2 cards per row on mobile (compact) */
+  .stats-grid{
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+    margin-bottom: 12px;
+  }
+
+  /* fallback for very small screens */
+  @media (max-width: 340px){
+    .stats-grid{ grid-template-columns: 1fr; }
+  }
+
+  .stat-card{
+    position: relative;
+    overflow: hidden;
+    border-radius: 12px;
+    border: 1px solid rgba(0,0,0,0.06);
+    background: rgba(255,255,255,0.90);
+    padding: 10px 10px 9px;
+    box-shadow: 0 6px 14px rgba(17,24,39,0.05);
+  }
+
+  .stat-card::before{
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 5px;
+    height: 100%;
+    background: rgba(0,0,0,0.12);
+  }
+
+  .stat-head{
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 6px;
+  }
+
+  .stat-label{
+    font-size: 12px;
+    font-weight: 900;
+    color: #111827;
+    line-height: 1.1;
+  }
+
+  .stat-meta{
+    margin-top: 3px;
+    font-size: 10px;
+    font-weight: 700;
+    color: #6b7280;
+    line-height: 1.1;
+  }
+
+  .stat-icon{
+    width: 18px;
+    height: 18px;
+    flex-shrink: 0;
+    opacity: 0.9;
+    margin-top: 1px;
+  }
+
+  .stat-value{
+    font-size: 18px;
+    font-weight: 900;
+    color: #111827;
+    letter-spacing: .2px;
+    line-height: 1.15;
+    word-break: break-word;
+  }
+
+  /* Variants (soft backgrounds + left bar) */
+  .stat--blue{ background: rgba(227,242,253,0.75); }
+  .stat--blue::before{ background: #1e88e5; }
+
+  .stat--amber{ background: rgba(255,243,205,0.75); }
+  .stat--amber::before{ background: #f59e0b; }
+
+  .stat--green{ background: rgba(212,237,218,0.75); }
+  .stat--green::before{ background: #22c55e; }
+
+  .stat--red{ background: rgba(248,215,218,0.75); }
+  .stat--red::before{ background: #ef4444; }
+
+  /* At a glance compact */
+  .divider{
+    height: 1px;
+    background: rgba(0,0,0,0.08);
+    border: none;
+    margin: 12px 0 10px;
+  }
+
+  .glance{
+    padding: 10px;
+    border-radius: 12px;
+    border: 1px solid rgba(0,0,0,0.06);
+    background: rgba(255,255,255,0.85);
+  }
+
+  .glance-title{
+    font-size: 12px;
+    font-weight: 900;
+    color: #111827;
+    margin-bottom: 8px;
+  }
+
+  .glance-row{
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 9px 10px;
+    border-radius: 10px;
+    background: rgba(0,0,0,0.03);
+    border: 1px solid rgba(0,0,0,0.05);
+  }
+
+  .glance-label{
+    font-size: 11px;
+    font-weight: 800;
+    color: #374151;
+  }
+
+  .glance-value{
+    font-size: 13px;
+    font-weight: 900;
+    color: #111827;
+  }
+
+  /* Wider screens */
+  @media (min-width: 900px){
+    .stats-grid{ grid-template-columns: repeat(4, minmax(0, 1fr)); }
+    .stat-value{ font-size: 20px; }
+  }
+</style>
+
+<div class="dash-wrap">
+  <div class="dash-title">User Dashboard</div>
+
+  <div class="stats-grid">
+    <!-- Active Balance -->
+    <div class="stat-card stat--blue">
+      <div class="stat-head">
+        <div>
+          <div class="stat-label">Active Balance</div>
+          <div class="stat-meta">Available to withdraw</div>
         </div>
+        <svg class="stat-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M12 1v22"></path>
+          <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7H14a3.5 3.5 0 0 1 0 7H6"></path>
+        </svg>
+      </div>
+      <div class="stat-value">{{ active_balance }}</div>
     </div>
-    <hr>
-    <h3>At a Glance</h3>
-    <p>Total Tasks Submitted: <strong>{{ total }}</strong></p>
+
+    <!-- Hold Balance -->
+    <div class="stat-card stat--amber">
+      <div class="stat-head">
+        <div>
+          <div class="stat-label">Hold Balance</div>
+          <div class="stat-meta">Pending tasks × 10</div>
+        </div>
+        <svg class="stat-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <circle cx="12" cy="12" r="9"></circle>
+          <path d="M12 7v5l3 3"></path>
+        </svg>
+      </div>
+      <div class="stat-value">{{ hold_balance }}</div>
+    </div>
+
+    <!-- Total Earned -->
+    <div class="stat-card stat--green">
+      <div class="stat-head">
+        <div>
+          <div class="stat-label">Total Earned</div>
+          <div class="stat-meta">Lifetime earnings</div>
+        </div>
+        <svg class="stat-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M12 2v20"></path>
+          <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7H14a3.5 3.5 0 0 1 0 7H6"></path>
+          <path d="M7 12h10"></path>
+        </svg>
+      </div>
+      <div class="stat-value">{{ total_earned }}</div>
+    </div>
+
+    <!-- Total Withdrawn -->
+    <div class="stat-card stat--red">
+      <div class="stat-head">
+        <div>
+          <div class="stat-label">Total Withdrawn</div>
+          <div class="stat-meta">Approved + pending</div>
+        </div>
+        <svg class="stat-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M3 7h18"></path>
+          <path d="M6 7v13a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V7"></path>
+          <path d="M9 11h6"></path>
+        </svg>
+      </div>
+      <div class="stat-value">{{ total_withdrawn }}</div>
+    </div>
+  </div>
+
+  <hr class="divider">
+
+  <div class="glance">
+    <div class="glance-title">At a Glance</div>
+    <div class="glance-row">
+      <div class="glance-label">Total Tasks Submitted</div>
+      <div class="glance-value">{{ total }}</div>
+    </div>
+  </div>
+</div>
+
 {% endblock %}
