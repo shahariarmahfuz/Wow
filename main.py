@@ -14,7 +14,7 @@ app = Flask(__name__)
 app.config['SECRET_KEY'] = 'super_secret_key_change_this_immediately'
 
 # --- DATABASE CONFIGURATION (PostgreSQL) ---
-app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://postgres:GQIoLwUqSwPjnpowjkzIamwsGIGVBydj@gondola.proxy.rlwy.net:32091/railway'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://okay_9pde_user:CV4rYVwQlfKoz38aZYuvIapAMxTjGir6@dpg-d63etfkhg0os73cej3j0-a.singapore-postgres.render.com/okay_9pde'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 # --- REMEMBER ME CONFIGURATION (30 Days) ---
