@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        body { background-color: #f4f6f9; }
+        .card-box {
+            background: #fff;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+            transition: transform 0.3s;
+        }
+        .card-box:hover { transform: translateY(-5px); }
+        .icon-box {
+            font-size: 40px;
+            margin-bottom: 10px;
+            opacity: 0.8;
+        }
+        .nav-link { color: #333; font-weight: 500; }
+        .nav-link:hover { color: #007bff; }
+        .sidebar-btn {
+            display: block;
+            width: 100%;
+            text-align: left;
+            margin-bottom: 5px;
+            padding: 10px 15px;
+            border-radius: 5px;
+            background: white;
+            color: #333;
+            text-decoration: none;
+            border: 1px solid #ddd;
+        }
+        .sidebar-btn:hover { background: #007bff; color: white; border-color: #007bff; }
+        .bg-gradient-primary { background: linear-gradient(45deg, #007bff, #0056b3); color: white; }
+        .bg-gradient-success { background: linear-gradient(45deg, #28a745, #1e7e34); color: white; }
+        .bg-gradient-warning { background: linear-gradient(45deg, #ffc107, #d39e00); color: #333; }
+        .bg-gradient-danger { background: linear-gradient(45deg, #dc3545, #bd2130); color: white; }
+    </style>
+</head>
+<body>
+
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+    <div class="container-fluid">
+        <a class="navbar-brand" href="#">👑 Admin Panel</a>
+        <div class="d-flex">
+            <span class="navbar-text me-3 text-white">Welcome, Admin</span>
+            <a href="{{ url_for('logout') }}" class="btn btn-outline-light btn-sm">Logout</a>
+        </div>
+    </div>
+</nav>
+
+<div class="container mt-4">
+    {% with messages = get_flashed_messages() %}
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert alert-info alert-dismissible fade show">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <div class="row">
+        <div class="col-md-3 mb-4">
+            <div class="card shadow-sm">
+                <div class="card-header bg-secondary text-white">
+                    <h5 class="mb-0">Quick Actions</h5>
+                </div>
+                <div class="card-body p-2">
+                    <a href="{{ url_for('admin_users') }}" class="sidebar-btn"><i class="fas fa-users me-2"></i> Manage Users</a>
+                    <a href="{{ url_for('admin_withdrawals') }}" class="sidebar-btn"><i class="fas fa-money-bill-wave me-2"></i> Withdrawal Requests</a>
+                    <a href="{{ url_for('admin_system') }}" class="sidebar-btn"><i class="fas fa-cogs me-2"></i> System Settings</a>
+                    <a href="{{ url_for('admin_custom_task') }}" class="sidebar-btn"><i class="fas fa-plus-circle me-2"></i> Add Custom Task</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-9">
+            <div class="row">
+                <div class="col-md-6 col-lg-4">
+                    <div class="card-box bg-gradient-primary">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="text-uppercase">Total Users</h6>
+                                <h2 class="mb-0">{{ total_users }}</h2>
+                            </div>
+                            <div class="icon-box"><i class="fas fa-users"></i></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-6 col-lg-4">
+                    <div class="card-box bg-gradient-success">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="text-uppercase">Total Tasks</h6>
+                                <h2 class="mb-0">{{ total_tasks }}</h2>
+                            </div>
+                            <div class="icon-box"><i class="fas fa-tasks"></i></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-6 col-lg-4">
+                    <div class="card-box bg-gradient-warning">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="text-uppercase">Pending Request</h6>
+                                <h2 class="mb-0">{{ pending_withdrawals }}</h2>
+                            </div>
+                            <div class="icon-box"><i class="fas fa-clock"></i></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-6 col-lg-6">
+                    <div class="card-box bg-white text-dark border-start border-5 border-primary">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="text-muted text-uppercase">Users Total Balance</h6>
+                                <h3 class="mb-0 text-primary">{{ total_user_balance }} Coins</h3>
+                            </div>
+                            <div class="icon-box text-primary"><i class="fas fa-wallet"></i></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-6 col-lg-6">
+                    <div class="card-box bg-white text-dark border-start border-5 border-danger">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="text-muted text-uppercase">Pending Payout Amount</h6>
+                                <h3 class="mb-0 text-danger">{{ pending_withdraw_amount }} Coins</h3>
+                            </div>
+                            <div class="icon-box text-danger"><i class="fas fa-hand-holding-usd"></i></div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
