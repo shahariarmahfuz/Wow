@@ -1,3 +1,4 @@
+{# templates/submit_task.html #}
 {% extends "base.html" %}
 
 {% block content %}
@@ -8,10 +9,6 @@
 <link href="https://fonts.googleapis.com/css2?family=Raleway:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 
 <style>
-  /* =========================
-     ONLY DESIGN + ORDER (NO LOGIC CHANGE)
-     ========================= */
-
   :root{
     --bg-body: #ffffff;
     --card-bg: #ffffff;
@@ -30,7 +27,6 @@
     position: relative;
   }
 
-  /* Grid background */
   body::before{
     content:"";
     position: fixed;
@@ -115,7 +111,6 @@
     color: #b91c1c;
   }
 
-  /* Form */
   .form{ display: grid; gap: 14px; }
 
   .field label{
@@ -144,8 +139,11 @@
     border-color: rgba(245,158,11,0.7);
     box-shadow: 0 0 0 3px rgba(245,158,11,0.15);
   }
+  .input[readonly]{
+    background: #f9fafb;
+    color: #111827;
+  }
 
-  /* Credentials card */
   .cred{
     background: var(--card-bg);
     border: 1px solid var(--border);
@@ -208,7 +206,6 @@
     background: #f9fafb;
   }
 
-  /* Copy button */
   .copy-btn{
     display: inline-flex;
     align-items: center;
@@ -226,7 +223,6 @@
   .copy-btn:active{ transform: translateY(1px); }
   .copy-btn svg{ width: 18px; height: 18px; }
 
-  /* Upload (QR will be at the very bottom section) */
   .upload{
     position: relative;
     width: 100%;
@@ -282,7 +278,6 @@
   .upload-status.is-success{ color: #16a34a; }
   .upload-status.is-error{ color: #b91c1c; }
 
-  /* OTP */
   .otp{
     display: none;
     padding: 18px;
@@ -298,7 +293,6 @@
     font-weight: 700;
     color: var(--text-main);
   }
-
   .otp-code{
     font-size: 28px;
     font-weight: 700;
@@ -306,14 +300,12 @@
     color: #0f172a;
     font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
   }
-
   .otp-row{
     display: grid;
     gap: 10px;
     margin-top: 10px;
     text-align: left;
   }
-
   .bar{
     width: 100%;
     height: 6px;
@@ -336,7 +328,6 @@
     color: #16a34a;
   }
 
-  /* Submit button (same class/JS behavior) */
   .submit-btn{
     display: inline-flex;
     align-items: center;
@@ -365,6 +356,35 @@
   .submit-btn.is-ready:hover{ opacity: .92; }
   .submit-btn.is-ready:active{ transform: translateY(1px); }
 
+  .secondary-btn{
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    width: 100%;
+    height: 48px;
+    padding: 0 16px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    background: #ffffff;
+    color: #111827;
+    font-size: 15px;
+    font-weight: 800;
+    cursor: pointer;
+    transition: transform .06s ease, background .15s ease, opacity .15s ease;
+    font-family: 'Raleway', sans-serif;
+  }
+  .secondary-btn:hover{ background: #f9fafb; }
+  .secondary-btn:active{ transform: translateY(1px); }
+
+  .btn-row{
+    display:grid;
+    gap: 10px;
+  }
+  @media (min-width: 520px){
+    .btn-row{ grid-template-columns: 1fr 1fr; }
+  }
+
   @media (max-width: 520px){
     .st-wrap{ padding: 0 14px; }
     .st-body{ padding: 18px; }
@@ -387,126 +407,159 @@
           <div>Not accepting now.</div>
         </div>
       {% else %}
+
         <form id="taskForm" class="form" method="POST" action="{{ url_for('submit_task') }}">
-          <input type="hidden" name="password" value="{{ gen_pass }}">
-          <input type="hidden" name="recovery_email" value="{{ gen_recovery }}">
 
-          <!-- FIRST: Email -->
-          <div class="field">
-            <label>Created Email Address</label>
-            <input
-              class="input"
-              type="email"
-              name="email"
-              required
-              placeholder="example@gmail.com"
-              autocomplete="off"
-              inputmode="email"
-            >
-          </div>
-
-          <!-- Details: System Credentials (copyable) -->
-          <div class="cred">
-            <div class="cred-head">
-              <h4 class="cred-title">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="color:#0b4fa7">
-                  <rect x="3" y="11" width="18" height="11" rx="2"></rect>
-                  <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
-                </svg>
-                System Credentials
-              </h4>
-              <span class="st-badge">Auto</span>
+          {% if step == 'email' %}
+            <!-- STEP 1: Email first -->
+            <div class="field">
+              <label>Created Email Address</label>
+              <input
+                class="input"
+                type="email"
+                name="email"
+                required
+                placeholder="example@gmail.com"
+                autocomplete="off"
+                inputmode="email"
+                value="{{ draft_email or '' }}"
+              >
             </div>
 
-            <div class="cred-grid">
-              <div class="kv">
-                <label>Password</label>
-                <div class="mono-box">
-                  <span class="mono" id="copy_pass">{{ gen_pass }}</span>
-                  <button type="button" class="copy-btn" onclick="copyToClipboard('copy_pass', this)" title="Copy Password">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor" aria-hidden="true">
-                      <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 17.25v3.375c0 .621-.504 1.125-1.125 1.125h-9.75A1.125 1.125 0 013.75 20.625V7.875c0-.621.504-1.125 1.125-1.125H6.75" />
-                      <path stroke-linecap="round" stroke-linejoin="round" d="M9.75 3.75h9.375c.621 0 1.125.504 1.125 1.125v9.375c0 .621-.504 1.125-1.125 1.125H9.75c-.621 0-1.125-.504-1.125-1.125V4.875c0-.621.504-1.125 1.125-1.125z" />
-                    </svg>
-                  </button>
-                </div>
+            <button type="submit" class="submit-btn is-ready" name="action" value="next" style="cursor:pointer;">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M5 12h14"></path>
+                <path d="M13 5l7 7-7 7"></path>
+              </svg>
+              Next
+            </button>
+
+            <div class="notice" style="border-color:rgba(245,158,11,0.25); background:#fff7ed; color:#9a3412;">
+              <h3 style="color:#9a3412;">Tip</h3>
+              <div>Email দিয়ে <b>Next</b> চাপুন — এরপর credentials generate হবে এবং refresh হলেও আর পরিবর্তন হবে না (Submit/Reset না করা পর্যন্ত)।</div>
+            </div>
+
+          {% else %}
+            <!-- STEP 2: Details (persisted from Draft) -->
+
+            <!-- Email (Locked) -->
+            <div class="field">
+              <label>Created Email Address</label>
+              <input class="input" type="email" value="{{ draft_email }}" readonly>
+            </div>
+
+            <!-- Details: System Credentials (copyable) -->
+            <div class="cred">
+              <div class="cred-head">
+                <h4 class="cred-title">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="color:#0b4fa7">
+                    <rect x="3" y="11" width="18" height="11" rx="2"></rect>
+                    <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                  </svg>
+                  System Credentials
+                </h4>
+                <span class="st-badge">Saved</span>
               </div>
 
-              <div class="kv">
-                <label>Recovery</label>
-                <div class="mono-box">
-                  <span class="mono" id="copy_recovery">{{ gen_recovery }}</span>
-                  <button type="button" class="copy-btn" onclick="copyToClipboard('copy_recovery', this)" title="Copy Recovery Email">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor" aria-hidden="true">
-                      <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 17.25v3.375c0 .621-.504 1.125-1.125 1.125h-9.75A1.125 1.125 0 013.75 20.625V7.875c0-.621.504-1.125 1.125-1.125H6.75" />
-                      <path stroke-linecap="round" stroke-linejoin="round" d="M9.75 3.75h9.375c.621 0 1.125.504 1.125 1.125v9.375c0 .621-.504 1.125-1.125 1.125H9.75c-.621 0-1.125-.504-1.125-1.125V4.875c0-.621.504-1.125 1.125-1.125z" />
-                    </svg>
-                  </button>
+              <div class="cred-grid">
+                <div class="kv">
+                  <label>Password</label>
+                  <div class="mono-box">
+                    <span class="mono" id="copy_pass">{{ gen_pass }}</span>
+                    <button type="button" class="copy-btn" onclick="copyToClipboard('copy_pass', this)" title="Copy Password">
+                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 17.25v3.375c0 .621-.504 1.125-1.125 1.125h-9.75A1.125 1.125 0 013.75 20.625V7.875c0-.621.504-1.125 1.125-1.125H6.75" />
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M9.75 3.75h9.375c.621 0 1.125.504 1.125 1.125v9.375c0 .621-.504 1.125-1.125 1.125H9.75c-.621 0-1.125-.504-1.125-1.125V4.875c0-.621.504-1.125 1.125-1.125z" />
+                      </svg>
+                    </button>
+                  </div>
+                </div>
+
+                <div class="kv">
+                  <label>Recovery</label>
+                  <div class="mono-box">
+                    <span class="mono" id="copy_recovery">{{ gen_recovery }}</span>
+                    <button type="button" class="copy-btn" onclick="copyToClipboard('copy_recovery', this)" title="Copy Recovery Email">
+                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 17.25v3.375c0 .621-.504 1.125-1.125 1.125h-9.75A1.125 1.125 0 013.75 20.625V7.875c0-.621.504-1.125 1.125-1.125H6.75" />
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M9.75 3.75h9.375c.621 0 1.125.504 1.125 1.125v9.375c0 .621-.504 1.125-1.125 1.125H9.75c-.621 0-1.125-.504-1.125-1.125V4.875c0-.621.504-1.125 1.125-1.125z" />
+                      </svg>
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
 
-          <!-- OTP area (copyable code + secret) -->
-          <div id="otp_display_area" class="otp">
-            <h4>Code</h4>
+            <!-- OTP area -->
+            <div id="otp_display_area" class="otp">
+              <h4>Code</h4>
 
-            <div class="mono-box" style="margin-top:10px;">
-              <div class="otp-code" id="live_code" style="width:100%; text-align:left;">--- ---</div>
-              <button type="button" class="copy-btn" onclick="copyToClipboard('live_code', this)" title="Copy Code">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor" aria-hidden="true">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 17.25v3.375c0 .621-.504 1.125-1.125 1.125h-9.75A1.125 1.125 0 013.75 20.625V7.875c0-.621.504-1.125 1.125-1.125H6.75" />
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M9.75 3.75h9.375c.621 0 1.125.504 1.125 1.125v9.375c0 .621-.504 1.125-1.125 1.125H9.75c-.621 0-1.125-.504-1.125-1.125V4.875c0-.621.504-1.125 1.125-1.125z" />
-                </svg>
-              </button>
-            </div>
-
-            <div class="otp-row">
-              <div class="mono-box">
-                <span class="mono" id="secret_copy_value">------</span>
-                <button type="button" class="copy-btn" onclick="copyToClipboard('secret_copy_value', this)" title="Copy Secret">
+              <div class="mono-box" style="margin-top:10px;">
+                <div class="otp-code" id="live_code" style="width:100%; text-align:left;">--- ---</div>
+                <button type="button" class="copy-btn" onclick="copyToClipboard('live_code', this)" title="Copy Code">
                   <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor" aria-hidden="true">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 17.25v3.375c0 .621-.504 1.125-1.125 1.125h-9.75A1.125 1.125 0 013.75 20.625V7.875c0-.621.504-1.125 1.125-1.125H6.75" />
                     <path stroke-linecap="round" stroke-linejoin="round" d="M9.75 3.75h9.375c.621 0 1.125.504 1.125 1.125v9.375c0 .621-.504 1.125-1.125 1.125H9.75c-.621 0-1.125-.504-1.125-1.125V4.875c0-.621.504-1.125 1.125-1.125z" />
                   </svg>
                 </button>
               </div>
+
+              <div class="otp-row">
+                <div class="mono-box">
+                  <span class="mono" id="secret_copy_value">------</span>
+                  <button type="button" class="copy-btn" onclick="copyToClipboard('secret_copy_value', this)" title="Copy Secret">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor" aria-hidden="true">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 17.25v3.375c0 .621-.504 1.125-1.125 1.125h-9.75A1.125 1.125 0 013.75 20.625V7.875c0-.621.504-1.125 1.125-1.125H6.75" />
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M9.75 3.75h9.375c.621 0 1.125.504 1.125 1.125v9.375c0 .621-.504 1.125-1.125 1.125H9.75c-.621 0-1.125-.504-1.125-1.125V4.875c0-.621.504-1.125 1.125-1.125z" />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+
+              <div class="bar"><div id="otp_progress"></div></div>
+              <div class="otp-note">OK</div>
             </div>
 
-            <div class="bar"><div id="otp_progress"></div></div>
-            <div class="otp-note">OK</div>
-          </div>
+            <!-- Submit + Reset -->
+            <div class="btn-row">
+              <button type="submit" id="submit_btn" class="submit-btn" name="action" value="submit" disabled>
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M22 2L11 13"></path>
+                  <path d="M22 2l-7 20-4-9-9-4z"></path>
+                </svg>
+                Waiting...
+              </button>
 
-          <button type="submit" id="submit_btn" class="submit-btn" disabled>
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-              <path d="M22 2L11 13"></path>
-              <path d="M22 2l-7 20-4-9-9-4z"></path>
-            </svg>
-            Waiting...
-          </button>
-
-          <!-- QR at the VERY BOTTOM -->
-          <div class="upload">
-            <div class="upload-title">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                <path d="M4 4h6v6H4z"></path>
-                <path d="M14 4h6v6h-6z"></path>
-                <path d="M4 14h6v6H4z"></path>
-                <path d="M14 14h2"></path>
-                <path d="M18 14h2v2"></path>
-                <path d="M14 18h2v2"></path>
-                <path d="M18 18h2"></path>
-              </svg>
-              QR
+              <button type="submit" class="secondary-btn" name="action" value="reset">
+                Reset
+              </button>
             </div>
 
-            <input type="file" id="qr_file" accept="image/*" onchange="processQR()">
-            <small id="upload_status" class="upload-status">Waiting...</small>
-          </div>
+            <!-- QR at bottom -->
+            <div class="upload">
+              <div class="upload-title">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M4 4h6v6H4z"></path>
+                  <path d="M14 4h6v6h-6z"></path>
+                  <path d="M4 14h6v6H4z"></path>
+                  <path d="M14 14h2"></path>
+                  <path d="M18 14h2v2"></path>
+                  <path d="M14 18h2v2"></path>
+                  <path d="M18 18h2"></path>
+                </svg>
+                QR
+              </div>
 
-          <input type="hidden" name="secret_code" id="hidden_secret">
+              <input type="file" id="qr_file" accept="image/*" onchange="processQR()">
+              <small id="upload_status" class="upload-status">Waiting...</small>
+            </div>
+
+            <input type="hidden" name="secret_code" id="hidden_secret" value="{{ draft_secret or '' }}">
+
+          {% endif %}
 
         </form>
+
       {% endif %}
     </div>
   </div>
@@ -515,15 +568,19 @@
 <script>
   let otpIntervalId = null;
 
+  function getEl(id){ return document.getElementById(id); }
+
   function setUploadStatus(text, state) {
-    const el = document.getElementById('upload_status');
+    const el = getEl('upload_status');
+    if (!el) return;
     el.classList.remove('is-loading', 'is-success', 'is-error');
     if (state) el.classList.add(state);
     el.textContent = text;
   }
 
   function setSubmitReady(isReady) {
-    const btn = document.getElementById('submit_btn');
+    const btn = getEl('submit_btn');
+    if (!btn) return;
     btn.disabled = !isReady;
     btn.classList.toggle('is-ready', isReady);
     btn.innerHTML = isReady
@@ -544,14 +601,18 @@
   }
 
   async function processQR() {
-    const fileInput = document.getElementById('qr_file');
-    if (!fileInput.files || fileInput.files.length === 0) return;
+    const fileInput = getEl('qr_file');
+    if (!fileInput || !fileInput.files || fileInput.files.length === 0) return;
 
     setSubmitReady(false);
-    document.getElementById('otp_display_area').style.display = 'none';
-    document.getElementById('hidden_secret').value = '';
 
-    const secretEl = document.getElementById('secret_copy_value');
+    const otpArea = getEl('otp_display_area');
+    if (otpArea) otpArea.style.display = 'none';
+
+    const hidden = getEl('hidden_secret');
+    if (hidden) hidden.value = '';
+
+    const secretEl = getEl('secret_copy_value');
     if (secretEl) secretEl.textContent = '------';
 
     const formData = new FormData();
@@ -565,12 +626,13 @@
 
       if (result && result.success && result.secret) {
         setUploadStatus("OK", "is-success");
-        document.getElementById('hidden_secret').value = result.secret;
 
+        if (hidden) hidden.value = result.secret;
         if (secretEl) secretEl.textContent = result.secret;
 
         startOTPGenerator(result.secret);
-        document.getElementById('otp_display_area').style.display = 'block';
+
+        if (otpArea) otpArea.style.display = 'block';
         setSubmitReady(true);
       } else {
         const err = (result && result.error) ? result.error : "Failed.";
@@ -597,16 +659,16 @@
         secret: OTPAuth.Secret.fromBase32(secret)
       });
 
-      const liveCodeEl = document.getElementById('live_code');
-      const progressEl = document.getElementById('otp_progress');
+      const liveCodeEl = getEl('live_code');
+      const progressEl = getEl('otp_progress');
 
       otpIntervalId = setInterval(() => {
         const token = totp.generate();
-        liveCodeEl.textContent = token.substring(0, 3) + " " + token.substring(3, 6);
+        if (liveCodeEl) liveCodeEl.textContent = token.substring(0, 3) + " " + token.substring(3, 6);
 
         const epoch = Math.floor(Date.now() / 1000);
         const progress = (epoch % 30) / 30 * 100;
-        progressEl.style.width = (100 - progress) + "%";
+        if (progressEl) progressEl.style.width = (100 - progress) + "%";
       }, 1000);
     } catch (e) {
       // silent
@@ -614,7 +676,7 @@
   }
 
   function copyToClipboard(elementId, btn) {
-    const el = document.getElementById(elementId);
+    const el = getEl(elementId);
     if (!el) return;
 
     const text = (el.innerText || el.textContent || "").trim();
@@ -650,6 +712,22 @@
     document.body.removeChild(ta);
     if (typeof cb === 'function') cb();
   }
+
+  // If Draft already has secret (refresh), restore UI immediately
+  document.addEventListener('DOMContentLoaded', () => {
+    const hidden = getEl('hidden_secret');
+    const otpArea = getEl('otp_display_area');
+    const secretEl = getEl('secret_copy_value');
+
+    const existingSecret = hidden ? (hidden.value || '').trim() : '';
+    if (existingSecret) {
+      if (secretEl) secretEl.textContent = existingSecret;
+      if (otpArea) otpArea.style.display = 'block';
+      setUploadStatus("OK", "is-success");
+      startOTPGenerator(existingSecret);
+      setSubmitReady(true);
+    }
+  });
 </script>
 
 {% endblock %}
