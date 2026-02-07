@@ -16,7 +16,7 @@ app.config["SECRET_KEY"] = "super_secret_key_change_this"
 # --- DATABASE CONFIGURATION (PostgreSQL) ---
 app.config[
     "SQLALCHEMY_DATABASE_URI"
-] = "postgresql://postgres:GQIoLwUqSwPjnpowjkzIamwsGIGVBydj@gondola.proxy.rlwy.net:32091/railway"
+] = "postgresql://postgres:DeTxIpImDQDTixhRgIRlsXdTYkokvGtd@centerbeam.proxy.rlwy.net:42228/railway"
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
 # --- REMEMBER ME CONFIGURATION (30 Days) ---
