@@ -1,40 +1,71 @@
-{% extends "base.html" %}
+{% extends "admin_base.html" %}
+
 {% block content %}
-    <h2>⚙️ System Control</h2>
-    <div style="background: white; padding: 30px; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); max-width: 600px;">
+<h2 style="margin-bottom: 20px; color: #1e293b; border-bottom: 2px solid #e2e8f0; padding-bottom: 10px;">⚙️ System Control Panel</h2>
+
+<div style="background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); max-width: 700px;">
+    
+    <form method="POST">
         
-        <form method="POST">
-            <div style="margin-bottom: 20px; padding: 15px; border: 1px solid #ddd; border-radius: 5px; background: #fff3cd;">
-                <label style="font-weight: bold; font-size: 18px; display: flex; align-items: center;">
-                    <input type="checkbox" name="maintenance_mode" {% if maintenance_mode %}checked{% endif %} style="width: 20px; height: 20px; margin-right: 10px;">
-                    🚧 Enable Maintenance Mode
-                </label>
-                <p style="margin: 5px 0 0 35px; color: #666; font-size: 14px;">
-                    If enabled, users will see a maintenance page. Only Admins can access the site.
-                </p>
+        <div class="control-item">
+            <div class="text-group">
+                <h4>🚧 Maintenance Mode</h4>
+                <p>If enabled, only Admins can access the website. Users will see a maintenance page.</p>
             </div>
+            <label class="switch">
+                <input type="checkbox" name="maintenance_mode" {% if maintenance_mode %}checked{% endif %}>
+                <span class="slider"></span>
+            </label>
+        </div>
 
-            <div style="margin-bottom: 20px; padding: 15px; border: 1px solid #ddd; border-radius: 5px; background: #e2e3e5;">
-                <label style="font-weight: bold; font-size: 18px; display: flex; align-items: center;">
-                    <input type="checkbox" name="stop_task" {% if stop_task %}checked{% endif %} style="width: 20px; height: 20px; margin-right: 10px;">
-                    🛑 Stop Task Receiving
-                </label>
-                <p style="margin: 5px 0 0 35px; color: #666; font-size: 14px;">
-                    Users won't be able to submit new tasks, but can login and check history.
-                </p>
+        <div class="control-item">
+            <div class="text-group">
+                <h4>🛑 Stop Task Submission</h4>
+                <p>Prevent users from submitting new tasks temporarily.</p>
             </div>
+            <label class="switch">
+                <input type="checkbox" name="stop_task" {% if stop_task %}checked{% endif %}>
+                <span class="slider"></span>
+            </label>
+        </div>
 
-            <div style="margin-bottom: 20px; padding: 15px; border: 1px solid #ddd; border-radius: 5px; background: #d1ecf1;">
-                <label style="font-weight: bold; font-size: 18px; display: flex; align-items: center;">
-                    <input type="checkbox" name="stop_withdraw" {% if stop_withdraw %}checked{% endif %} style="width: 20px; height: 20px; margin-right: 10px;">
-                    💸 Stop Withdrawals
-                </label>
-                <p style="margin: 5px 0 0 35px; color: #666; font-size: 14px;">
-                    Users won't be able to request new payouts.
-                </p>
+        <div class="control-item">
+            <div class="text-group">
+                <h4>💸 Stop Withdrawals</h4>
+                <p>Disable payout requests for all users.</p>
             </div>
+            <label class="switch">
+                <input type="checkbox" name="stop_withdraw" {% if stop_withdraw %}checked{% endif %}>
+                <span class="slider"></span>
+            </label>
+        </div>
 
-            <button type="submit" class="btn" style="width: 100%; padding: 15px; font-size: 18px;">💾 Save Settings</button>
-        </form>
-    </div>
+        <button type="submit" class="btn-save">💾 Save System Settings</button>
+    </form>
+</div>
+
+<style>
+    .control-item {
+        display: flex; justify-content: space-between; align-items: center;
+        padding: 20px 0; border-bottom: 1px solid #f1f5f9;
+    }
+    .control-item:last-of-type { border-bottom: none; margin-bottom: 20px; }
+    .text-group h4 { margin: 0 0 5px 0; color: #334155; font-size: 16px; }
+    .text-group p { margin: 0; color: #64748b; font-size: 13px; }
+    
+    .btn-save {
+        width: 100%; padding: 12px; background-color: #3b82f6; color: white;
+        border: none; border-radius: 8px; font-weight: 600; cursor: pointer;
+        font-size: 15px; transition: background 0.2s;
+    }
+    .btn-save:hover { background-color: #2563eb; }
+
+    /* Toggle Switch */
+    .switch { position: relative; display: inline-block; width: 50px; height: 26px; }
+    .switch input { opacity: 0; width: 0; height: 0; }
+    .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #cbd5e1; transition: .4s; border-radius: 34px; }
+    .slider:before { position: absolute; content: ""; height: 20px; width: 20px; left: 3px; bottom: 3px; background-color: white; transition: .4s; border-radius: 50%; }
+    input:checked + .slider { background-color: #10b981; }
+    input:checked + .slider:before { transform: translateX(24px); }
+</style>
 {% endblock %}
