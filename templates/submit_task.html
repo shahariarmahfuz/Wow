@@ -2,6 +2,8 @@
 
 {% block content %}
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/otpauth/9.2.1/otpauth.umd.min.js"></script>
+
 <style>
     /* ========================= DESIGN STYLES ========================= */
     :root{
@@ -109,7 +111,7 @@
 
     /* OTP & Upload */
     .otp{ display: none; padding: 18px; border-radius: 10px; border: 1px solid #f3f4f6; background: #fff; text-align: center; margin-top: 15px; }
-    .otp-code{ font-size: 28px; font-weight: 700; letter-spacing: 3px; font-family: monospace; }
+    .otp-code{ font-size: 28px; font-weight: 700; letter-spacing: 3px; font-family: monospace; color: #111827; }
     .bar{ width: 100%; height: 6px; border-radius: 999px; background: rgba(15,23,42,0.1); margin-top: 12px; overflow: hidden; }
     .bar > div{ height: 100%; width: 100%; background: #f59e0b; }
 
@@ -123,7 +125,6 @@
     .upload input[type="file"]{ position: absolute; inset: 0; opacity: 0; cursor: pointer; }
     .upload-status.is-success{ color: #16a34a; }
     .upload-status.is-error{ color: #b91c1c; }
-    .upload-status.is-loading{ color: #64748b; }
 
     /* Submit Button */
     .submit-btn{
@@ -221,13 +222,12 @@
                     <div id="otp_display_area" class="otp">
                         <h4>2FA Code</h4>
                         <div class="mono-box" style="margin-top:10px;">
-                            <div class="otp-code" id="live_code" style="width:100%; text-align:left;">--- ---</div>
+                            <div class="otp-code" id="live_code" style="width:100%; text-align:left;">Loading...</div>
                             <button type="button" class="copy-btn" onclick="copyToClipboard('live_code', this)">📋</button>
                         </div>
                         <div class="otp-row" style="margin-top:10px;">
                             <div class="mono-box">
                                 <span class="mono" id="secret_copy_value">------</span>
-                                <button type="button" class="copy-btn" onclick="copyToClipboard('secret_copy_value', this)">📋</button>
                             </div>
                         </div>
                         <div class="bar"><div id="otp_progress"></div></div>
@@ -254,47 +254,17 @@
     </div>
 </div>
 
-<!-- IMPORTANT: Load OTPAuth BEFORE our logic uses it (and we still guard/wait if slow) -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/otpauth/9.1.2/otpauth.min.js"></script>
-
 <script>
     let otpIntervalId = null;
 
-    function sleep(ms) {
-        return new Promise((resolve) => setTimeout(resolve, ms));
-    }
-
-    async function ensureOtpAuthReady(timeoutMs = 8000) {
-        if (window.OTPAuth) return true;
-
-        const start = Date.now();
-        while (Date.now() - start < timeoutMs) {
-            await sleep(100);
-            if (window.OTPAuth) return true;
-        }
-        return false;
-    }
-
-    function normalizeSecret(secret) {
-        // Base32: A-Z and 2-7 (strip spaces/newlines etc.)
-        return (secret || "")
-            .toString()
-            .trim()
-            .replace(/\s+/g, "")
-            .toUpperCase()
-            .replace(/[^A-Z2-7]/g, "");
-    }
-
     function setUploadStatus(text, state) {
         const el = document.getElementById('upload_status');
-        if (!el) return;
         el.className = 'upload-status ' + (state || '');
         el.textContent = text;
     }
 
     function setSubmitReady(isReady) {
         const btn = document.getElementById('submit_btn');
-        if (!btn) return;
         btn.disabled = !isReady;
         btn.classList.toggle('is-ready', isReady);
         btn.textContent = isReady ? "✅ Submit Task" : "Waiting for QR Scan...";
@@ -302,15 +272,11 @@
 
     async function processQR() {
         const fileInput = document.getElementById('qr_file');
-        if (!fileInput || !fileInput.files || fileInput.files.length === 0) return;
+        if (!fileInput.files || fileInput.files.length === 0) return;
 
         setSubmitReady(false);
-
-        const otpBox = document.getElementById('otp_display_area');
-        if (otpBox) otpBox.style.display = 'none';
-
-        const hiddenSecret = document.getElementById('hidden_secret');
-        if (hiddenSecret) hiddenSecret.value = '';
+        document.getElementById('otp_display_area').style.display = 'none';
+        document.getElementById('hidden_secret').value = '';
 
         const formData = new FormData();
         formData.append("qr_file", fileInput.files[0]);
@@ -318,128 +284,102 @@
 
         try {
             const response = await fetch('/api/process_qr', { method: 'POST', body: formData });
-
-            if (!response.ok) {
-                setUploadStatus("Server error while scanning QR.", "is-error");
-                return;
-            }
-
             const result = await response.json();
 
             if (result && result.success && result.secret) {
-                const secretNorm = normalizeSecret(result.secret);
-
-                if (!secretNorm || secretNorm.length < 16) {
-                    setUploadStatus("Invalid secret from QR (format issue).", "is-error");
-                    return;
-                }
-
                 setUploadStatus("Success! QR Scanned.", "is-success");
+                
+                // Clean the secret just in case (remove spaces/newlines)
+                const cleanSecret = result.secret.replace(/\s/g, '').toUpperCase();
 
-                // Set Secret
-                if (hiddenSecret) hiddenSecret.value = secretNorm;
+                // Set Secret in UI and Hidden Field
+                document.getElementById('hidden_secret').value = cleanSecret;
+                document.getElementById('secret_copy_value').textContent = cleanSecret;
 
-                const secretCopy = document.getElementById('secret_copy_value');
-                if (secretCopy) secretCopy.textContent = secretNorm;
-
-                // Ensure OTP library is ready
-                const ok = await ensureOtpAuthReady();
-                if (!ok) {
-                    setUploadStatus("OTP library not loaded (CDN blocked/slow).", "is-error");
-                    return;
-                }
-
-                // Start OTP
-                const started = startOTPGenerator(secretNorm);
-                if (!started) {
-                    setUploadStatus("OTP start failed (check secret).", "is-error");
-                    return;
-                }
-
-                if (otpBox) otpBox.style.display = 'block';
-
+                // Start OTP Generation
+                startOTPGenerator(cleanSecret);
+                document.getElementById('otp_display_area').style.display = 'block';
+                
                 // Enable Submit
                 setSubmitReady(true);
             } else {
                 setUploadStatus("Failed to read QR.", "is-error");
             }
         } catch (e) {
-            setUploadStatus("Error uploading.", "is-error");
             console.error(e);
+            setUploadStatus("Error uploading.", "is-error");
         }
     }
 
     function startOTPGenerator(secret) {
         try {
-            if (!window.OTPAuth) return false;
-
-            if (otpIntervalId) {
-                clearInterval(otpIntervalId);
-                otpIntervalId = null;
+            // Check if OTPAuth library is loaded
+            if (typeof OTPAuth === 'undefined') {
+                alert("OTP Library not loaded! Please refresh page.");
+                return;
             }
 
+            if (otpIntervalId) clearInterval(otpIntervalId);
+
+            // Create TOTP object
+            // Important: Handle padding if secret is not perfect base32
             const totp = new OTPAuth.TOTP({
-                algorithm: 'SHA1',
-                digits: 6,
+                issuer: "Writo",
+                label: "Task",
+                algorithm: 'SHA1', 
+                digits: 6, 
                 period: 30,
-                secret: OTPAuth.Secret.fromBase32(secret),
+                secret: OTPAuth.Secret.fromBase32(secret)
             });
 
             const liveCodeEl = document.getElementById('live_code');
             const progressEl = document.getElementById('otp_progress');
 
-            if (!liveCodeEl || !progressEl) return false;
-
+            // Update Function
             const update = () => {
-                const token = totp.generate();
-                liveCodeEl.textContent = token.substring(0, 3) + " " + token.substring(3, 6);
-
-                const epoch = Math.floor(Date.now() / 1000);
-                const progress = (epoch % 30) / 30 * 100;
-                progressEl.style.width = (100 - progress) + "%";
+                try {
+                    const token = totp.generate();
+                    // Add space in middle for readability
+                    liveCodeEl.textContent = token.substring(0, 3) + " " + token.substring(3, 6);
+                    
+                    const epoch = Math.floor(Date.now() / 1000);
+                    const progress = (epoch % 30) / 30 * 100;
+                    progressEl.style.width = (100 - progress) + "%";
+                } catch (err) {
+                    liveCodeEl.textContent = "Error";
+                    console.error("Token Gen Error:", err);
+                }
             };
 
             update();
             otpIntervalId = setInterval(update, 1000);
-            return true;
         } catch (e) {
-            console.error("OTP Error", e);
-            return false;
+            console.error("OTP Init Error", e);
+            alert("Invalid Secret Key format.");
         }
     }
 
     function copyToClipboard(elementId, btn) {
         const el = document.getElementById(elementId);
         if (!el) return;
-        const text = (el.innerText || el.textContent || "").trim();
-
-        // clipboard API sometimes fails on non-HTTPS or older browsers
-        if (navigator.clipboard && window.isSecureContext) {
-            navigator.clipboard.writeText(text).then(() => {
-                if (!btn) return;
-                const original = btn.innerHTML;
-                btn.innerHTML = "✅";
-                setTimeout(() => btn.innerHTML = original, 1000);
-            });
-            return;
+        const text = el.innerText || el.textContent;
+        
+        // Fallback copy method
+        if (!navigator.clipboard) {
+            const textArea = document.createElement("textarea");
+            textArea.value = text.trim();
+            document.body.appendChild(textArea);
+            textArea.select();
+            try { document.execCommand('copy'); } catch (err) {}
+            document.body.removeChild(textArea);
+        } else {
+            navigator.clipboard.writeText(text.trim());
         }
 
-        // Fallback
-        const ta = document.createElement('textarea');
-        ta.value = text;
-        ta.style.position = 'fixed';
-        ta.style.left = '-9999px';
-        document.body.appendChild(ta);
-        ta.select();
-        try {
-            document.execCommand('copy');
-            if (btn) {
-                const original = btn.innerHTML;
-                btn.innerHTML = "✅";
-                setTimeout(() => btn.innerHTML = original, 1000);
-            }
-        } catch (_) {}
-        document.body.removeChild(ta);
+        // Animation
+        const original = btn.innerHTML;
+        btn.innerHTML = "✅";
+        setTimeout(() => btn.innerHTML = original, 1000);
     }
 </script>
 
