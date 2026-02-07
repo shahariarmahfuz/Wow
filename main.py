@@ -14,12 +14,12 @@ app = Flask(__name__)
 app.config['SECRET_KEY'] = 'super_secret_key_change_this_immediately'
 
 # --- DATABASE CONFIGURATION (PostgreSQL) ---
-app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://okay_9pde_user:CV4rYVwQlfKoz38aZYuvIapAMxTjGir6@dpg-d63etfkhg0os73cej3j0-a.singapore-postgres.render.com/okay_9pde'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://postgres:GQIoLwUqSwPjnpowjkzIamwsGIGVBydj@gondola.proxy.rlwy.net:32091/railway'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
-# --- REMEMBER ME CONFIGURATION (30 Days) ---
+# --- REMEMBER ME & SESSION CONFIGURATION ---
 app.config['REMEMBER_COOKIE_DURATION'] = timedelta(days=30)
-app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(minutes=30) # Session will expire in 30 mins
+app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(minutes=30)
 
 db = SQLAlchemy(app)
 login_manager = LoginManager()
@@ -79,16 +79,23 @@ def load_user(user_id):
 # --- HELPER FUNCTIONS ---
 
 def get_setting(key, default_val='false'):
-    setting = SystemSetting.query.filter_by(key=key).first()
-    return setting.value if setting else default_val
+    # Try/Except block added to prevent crash if table doesn't exist yet during init
+    try:
+        setting = SystemSetting.query.filter_by(key=key).first()
+        return setting.value if setting else default_val
+    except:
+        return default_val
 
 def set_setting(key, value):
-    setting = SystemSetting.query.filter_by(key=key).first()
-    if not setting:
-        db.session.add(SystemSetting(key=key, value=value))
-    else:
-        setting.value = value
-    db.session.commit()
+    try:
+        setting = SystemSetting.query.filter_by(key=key).first()
+        if not setting:
+            db.session.add(SystemSetting(key=key, value=value))
+        else:
+            setting.value = value
+        db.session.commit()
+    except Exception as e:
+        print(f"Error setting value: {e}")
 
 def extract_secret_from_qr(image_stream):
     try:
@@ -107,14 +114,14 @@ def extract_secret_from_qr(image_stream):
         return None
 
 def generate_system_data():
-    """পাসওয়ার্ড এবং রিকভারি ইমেইল অটো জেনারেট করে (সিস্টেম থেকে)"""
+    """পাসওয়ার্ড এবং রিকভারি ইমেইল অটো জেনারেট করে"""
     chars = string.ascii_letters + string.digits
     password = "Pass@" + ''.join(random.choices(chars, k=5))
     rec_chars = string.ascii_lowercase + string.digits
     recovery = ''.join(random.choices(rec_chars, k=10)) + "@xneko.xyz"
     return password, recovery
 
-# --- INTELLIGENT SYNC (AUTO ON LOGIN) ---
+# --- INTELLIGENT SYNC ---
 
 def sync_user_pending_tasks(user):
     pending_tasks = Task.query.filter(Task.user_id == user.id, Task.status.in_(['pending', 'processing'])).all()
@@ -164,7 +171,6 @@ def check_maintenance():
         if not current_user.is_authenticated or not current_user.is_admin:
             return render_template('maintenance.html')
             
-    # Session handling: Make session permanent so it lasts after browser close (for a while)
     session.permanent = True
 
 # --- ROUTES ---
@@ -197,11 +203,9 @@ def login():
             
             login_user(user, remember=remember)
             
-            # --- ADMIN CHECK ---
             if user.is_admin:
                 return redirect(url_for('admin_dashboard'))
             
-            # --- AUTO SYNC FOR REGULAR USERS ---
             should_sync = False
             if user.last_auto_sync is None:
                 should_sync = True
@@ -278,7 +282,6 @@ def dashboard():
 @app.route('/submit', methods=['GET', 'POST'])
 @login_required
 def submit_task():
-    # Admin Protection
     if current_user.is_admin:
         return redirect(url_for('admin_dashboard'))
 
@@ -286,36 +289,32 @@ def submit_task():
         flash("⚠️ Task submission is currently PAUSED by Admin.")
         return redirect(url_for('dashboard'))
 
-    # --- RESET / NEW TASK LOGIC ---
+    # --- RESET ---
     if request.args.get('action') == 'reset':
         session.pop('task_session', None)
         flash("🔄 Started fresh!")
         return redirect(url_for('submit_task'))
 
-    # --- STEP 1: INITIALIZE SESSION (EMAIL INPUT) ---
+    # --- STEP 1: EMAIL INPUT ---
     if request.method == 'POST' and 'step_email' in request.form:
         email = request.form.get('step_email')
 
-        # Check existing
         existing_tasks = Task.query.filter(Task.job_proof.like(f"{email}:%")).all()
         for t in existing_tasks:
             if t.status in ['pending', 'processing', 'confirmed']:
                 flash(f"❌ Email '{email}' is already active in system.")
                 return redirect(url_for('submit_task'))
         
-        # Generate and Save to Session
         gen_pass, gen_recovery = generate_system_data()
         session['task_session'] = {
             'email': email,
             'password': gen_pass,
             'recovery': gen_recovery
         }
-        # Redirect to GET to avoid resubmission issues
         return redirect(url_for('submit_task'))
 
-    # --- STEP 2: FINAL SUBMISSION (FROM SESSION) ---
+    # --- STEP 2: SUBMIT ---
     if request.method == 'POST' and 'secret_code' in request.form:
-        # Get data from session
         task_data = session.get('task_session')
         
         if not task_data:
@@ -351,9 +350,7 @@ def submit_task():
                 db.session.add(new_task)
                 db.session.commit()
                 
-                # CLEAR SESSION ON SUCCESS
                 session.pop('task_session', None)
-                
                 flash(f'✅ Task Submitted Successfully!')
                 return redirect(url_for('my_tasks'))
             else:
@@ -363,8 +360,6 @@ def submit_task():
         
         return redirect(url_for('submit_task'))
 
-    # --- GET REQUEST (RENDER) ---
-    # Retrieve session data to decide which view to show
     task_data = session.get('task_session')
     return render_template('submit_task.html', task_data=task_data)
 
@@ -384,12 +379,10 @@ def refresh_status(task_id):
     if task.user_id != current_user.id and not current_user.is_admin:
         return redirect(url_for('my_tasks'))
 
-    # Permanent Lock
     if task.status == 'confirmed':
         flash("🔒 Task is CONFIRMED and permanently locked.")
         return redirect(url_for('my_tasks'))
 
-    # Rate Limit (10 mins)
     if not current_user.is_admin and task.last_synced and task.last_synced != "Never":
         try:
             last_time = datetime.strptime(task.last_synced, "%Y-%m-%d %H:%M:%S")
@@ -640,15 +633,33 @@ def admin_custom_task():
                 
     return render_template('admin_custom_task.html', users=users)
 
-if __name__ == '__main__':
+# ==========================================================
+# DATABASE INITIALIZATION (FIX FOR GUNICORN/PRODUCTION)
+# ==========================================================
+def init_db():
+    """This function is called immediately when the app script is imported."""
     with app.app_context():
-        db.create_all()
-        # Create Default Admin
-        if not User.query.filter_by(username='admin').first():
-            db.session.add(User(username='admin', password='admin123', is_admin=True))
-        # Create Default Settings
-        if not SystemSetting.query.filter_by(key='min_withdraw').first():
-            db.session.add(SystemSetting(key='min_withdraw', value='10'))
-        db.session.commit()
-        
+        try:
+            # Create Tables
+            db.create_all()
+            
+            # Seed Default Admin
+            if not User.query.filter_by(username='admin').first():
+                db.session.add(User(username='admin', password='admin123', is_admin=True))
+                
+            # Seed Default Settings
+            if not SystemSetting.query.filter_by(key='min_withdraw').first():
+                db.session.add(SystemSetting(key='min_withdraw', value='10'))
+            if not SystemSetting.query.filter_by(key='maintenance_mode').first():
+                db.session.add(SystemSetting(key='maintenance_mode', value='false'))
+                
+            db.session.commit()
+            print("✅ Database & Tables Initialized Successfully.")
+        except Exception as e:
+            print(f"⚠️ Database Init Warning (Ignore if first run): {e}")
+
+# Call init_db() automatically when running with Gunicorn or python
+init_db()
+
+if __name__ == '__main__':
     app.run(host='0.0.0.0', port=8080, debug=True)
