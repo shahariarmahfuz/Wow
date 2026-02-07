@@ -1,38 +1,235 @@
 {% extends "base.html" %}
 {% block content %}
-    <h2>My Task History</h2>
-    <table>
-        <thead>
-            <tr>
-                <th>Task ID</th>
-                <th>Details</th>
-                <th>Status</th>
-                <th>Added</th>
-                <th>Last Synced</th> <th>Action</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for task in tasks %}
-            <tr>
-                <td>{{ task.external_task_id }}</td>
-                <td style="font-size: 11px; font-family: monospace;">
-                    E: {{ task.job_proof.split(':')[0] }}<br>
-                    P: {{ task.job_proof.split(':')[1] }}
-                </td>
-                <td class="status-{{ task.status }}">{{ task.status.upper() }}</td>
-                <td>{{ task.added_time }}</td>
-                <td style="font-size: 12px; color: #555;">{{ task.last_synced or 'Never' }}</td>
-                <td>
-                    {% if task.status == 'confirmed' %}
-                        <span class="btn" style="background: grey; cursor: default; font-size: 12px; padding: 5px;">Locked</span>
-                    {% else %}
-                        <a href="{{ url_for('refresh_status', task_id=task.id) }}" class="btn" style="font-size: 12px; padding: 5px;">Sync</a>
-                    {% endif %}
-                </td>
-            </tr>
+
+<style>
+  /* --- Compact + Mobile-friendly Task History --- */
+  .page-title{
+    font-size: 16px;
+    font-weight: 900;
+    margin: 6px 0 12px;
+    color: #111827;
+    letter-spacing: .2px;
+  }
+
+  .task-table{
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px;
+  }
+
+  .task-table th, .task-table td{
+    padding: 10px 12px;
+    border-bottom: 1px solid rgba(0,0,0,0.08);
+    text-align: left;
+    vertical-align: top;
+    font-size: 13px;
+  }
+
+  .task-table th{
+    background: rgba(0,0,0,0.03);
+    font-weight: 800;
+    color: #374151;
+    font-size: 12px;
+    letter-spacing: .2px;
+  }
+
+  .proof{
+    font-size: 11px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    color: #111827;
+    line-height: 1.35;
+    word-break: break-word;
+  }
+
+  .muted{
+    font-size: 12px;
+    color: #6b7280;
+    font-weight: 600;
+  }
+
+  /* Status (uses your base.html classes too) */
+  .status-pill{
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 900;
+    border: 1px solid rgba(0,0,0,0.08);
+    background: rgba(0,0,0,0.03);
+    letter-spacing: .3px;
+  }
+
+  .status-pill.status-confirmed,
+  .status-pill.status-approved{
+    color: #15803d;
+    background: rgba(34,197,94,0.10);
+    border-color: rgba(34,197,94,0.18);
+  }
+
+  .status-pill.status-declined,
+  .status-pill.status-rejected{
+    color: #b91c1c;
+    background: rgba(239,68,68,0.10);
+    border-color: rgba(239,68,68,0.18);
+  }
+
+  .status-pill.status-pending{
+    color: #b45309;
+    background: rgba(245,158,11,0.12);
+    border-color: rgba(245,158,11,0.20);
+  }
+
+  /* Buttons (compact) */
+  .btn-mini{
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 6px 10px;
+    border-radius: 10px;
+    font-size: 12px;
+    font-weight: 800;
+    text-decoration: none;
+    border: 1px solid rgba(0,0,0,0.08);
+    background: rgba(0,123,255,0.10);
+    color: #0b4fa7;
+    transition: transform .15s ease, background .15s ease;
+  }
+  .btn-mini:hover{
+    background: rgba(0,123,255,0.16);
+    transform: translateY(-1px);
+  }
+  .btn-mini:active{ transform: translateY(0); }
+
+  .btn-mini.locked{
+    background: rgba(0,0,0,0.06);
+    color: #6b7280;
+    cursor: default;
+  }
+  .btn-mini.locked:hover{ transform: none; background: rgba(0,0,0,0.06); }
+
+  /* --- Mobile card layout (table -> stacked cards) --- */
+  @media (max-width: 720px){
+    .task-table thead{ display: none; }
+    .task-table, .task-table tbody, .task-table tr, .task-table td{
+      display: block;
+      width: 100%;
+    }
+
+    .task-table tr{
+      border: 1px solid rgba(0,0,0,0.08);
+      border-radius: 14px;
+      background: rgba(255,255,255,0.92);
+      box-shadow: 0 8px 18px rgba(17,24,39,0.05);
+      margin-bottom: 12px;
+      overflow: hidden;
+    }
+
+    .task-table td{
+      border-bottom: 1px solid rgba(0,0,0,0.06);
+      padding: 10px 12px;
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+      font-size: 13px;
+    }
+
+    .task-table td:last-child{ border-bottom: none; }
+
+    .task-table td::before{
+      content: attr(data-label);
+      flex: 0 0 92px;
+      font-size: 11px;
+      font-weight: 900;
+      color: #6b7280;
+      letter-spacing: .2px;
+      text-transform: uppercase;
+      margin-top: 2px;
+    }
+
+    .cell-value{
+      flex: 1;
+      text-align: right;
+    }
+
+    /* Proof cell aligned better */
+    .cell-value.proof{
+      text-align: left;
+      margin-left: auto;
+      max-width: calc(100% - 104px);
+    }
+
+    /* Action aligned right */
+    .cell-value.action{
+      display: flex;
+      justify-content: flex-end;
+    }
+  }
+</style>
+
+<h2 class="page-title">My Task History</h2>
+
+<table class="task-table">
+  <thead>
+    <tr>
+      <th>Task ID</th>
+      <th>Details</th>
+      <th>Status</th>
+      <th>Added</th>
+      <th>Last Synced</th>
+      <th>Action</th>
+    </tr>
+  </thead>
+
+  <tbody>
+    {% for task in tasks %}
+      {% set parts = task.job_proof.split(':') %}
+      <tr>
+        <td data-label="Task ID">
+          <div class="cell-value">{{ task.external_task_id }}</div>
+        </td>
+
+        <td data-label="Details">
+          <div class="cell-value proof">
+            E: {{ parts[0] }}<br>
+            P: {{ parts[1] if parts|length > 1 else '' }}
+          </div>
+        </td>
+
+        <td data-label="Status">
+          <div class="cell-value">
+            <span class="status-pill status-{{ task.status }}">{{ task.status.upper() }}</span>
+          </div>
+        </td>
+
+        <td data-label="Added">
+          <div class="cell-value">{{ task.added_time }}</div>
+        </td>
+
+        <td data-label="Synced">
+          <div class="cell-value muted">{{ task.last_synced or 'Never' }}</div>
+        </td>
+
+        <td data-label="Action">
+          <div class="cell-value action">
+            {% if task.status == 'confirmed' %}
+              <span class="btn-mini locked">Locked</span>
             {% else %}
-            <tr><td colspan="6">No tasks found.</td></tr>
-            {% endfor %}
-        </tbody>
-    </table>
+              <a href="{{ url_for('refresh_status', task_id=task.id) }}" class="btn-mini">Sync</a>
+            {% endif %}
+          </div>
+        </td>
+      </tr>
+    {% else %}
+      <tr>
+        <td data-label="Info">
+          <div class="cell-value">No tasks found.</div>
+        </td>
+      </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
 {% endblock %}
