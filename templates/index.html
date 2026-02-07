@@ -1,54 +1,285 @@
+{# templates/index.html #}
 {% extends "base.html" %}
 
 {% block content %}
-<div style="text-align: center; padding: 50px 20px;">
-    
-    <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 60px 20px; border-radius: 15px; margin-bottom: 40px; box-shadow: 0 10px 25px rgba(0,0,0,0.1);">
-        <h1 style="font-size: 3rem; margin-bottom: 15px;">Welcome to TaskMaster</h1>
-        <p style="font-size: 1.2rem; margin-bottom: 30px; opacity: 0.9;">
-            The most trusted platform to earn rewards by completing simple digital tasks.
+<style>
+  /* Page scoped styles (won't break base.html) */
+  .home-hero {
+    --card-bg: #ffffff;
+    --text-main: #111827;
+    --text-muted: #6b7280;
+    --border: #e5e7eb;
+    --shadow: 0 18px 40px rgba(0,0,0,0.12);
+    --gradient: linear-gradient(to right, #f59e0b, #ef4444, #db2777);
+    --gradient-btn: linear-gradient(to right, #f59e0b, #ef4444);
+
+    font-family: "Raleway", system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+    color: var(--text-main);
+  }
+
+  .home-hero .main-content {
+    min-height: calc(100vh - 160px); /* base has top+bottom nav space */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 30px 0 20px;
+  }
+
+  .home-hero .hero-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 14px;
+    border: 1px solid var(--border);
+    background: rgba(255,255,255,0.82);
+    border-radius: 999px;
+    margin-bottom: 18px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.03);
+  }
+  .home-hero .badge-dot {
+    width: 8px;
+    height: 8px;
+    background: #f97316;
+    transform: rotate(45deg);
+    display: inline-block;
+  }
+  .home-hero .badge-text {
+    font-size: 12px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--text-muted);
+  }
+
+  .home-hero .hero-title {
+    font-size: clamp(2.1rem, 6.8vw, 3.6rem);
+    font-weight: 800;
+    margin: 0 0 12px;
+    line-height: 1.08;
+    letter-spacing: -0.03em;
+  }
+
+  .home-hero .gradient-text {
+    background: var(--gradient);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  .home-hero .hero-subtitle {
+    max-width: 720px;
+    color: var(--text-muted);
+    font-size: 15px;
+    font-weight: 600;
+    line-height: 1.7;
+    margin: 0 0 18px;
+  }
+
+  .home-hero .action-card {
+    width: min(620px, 100%);
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    box-shadow: var(--shadow);
+    padding: 22px;
+  }
+
+  .home-hero .card-text {
+    color: var(--text-muted);
+    font-size: 15px;
+    font-weight: 600;
+    margin-bottom: 14px;
+  }
+
+  .home-hero .btn-group {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 10px;
+  }
+
+  .home-hero .hero-btn {
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 13px 22px;
+    font-size: 13px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    color: #fff;
+    background: var(--gradient-btn);
+    border-radius: 8px;
+    transition: transform 0.1s ease, opacity 0.2s ease;
+    border: none;
+    line-height: 1;
+  }
+  .home-hero .hero-btn:hover { opacity: 0.92; }
+  .home-hero .hero-btn:active { transform: translateY(1px); }
+  .home-hero .hero-btn.secondary { background: #111827; }
+
+  .home-hero .btn-icon {
+    width: 18px;
+    height: 18px;
+    display: block;
+  }
+
+  .home-hero .features {
+    width: min(1100px, 100%);
+    margin-top: 16px;
+    display: flex;
+    gap: 14px;
+    justify-content: center;
+    flex-wrap: wrap;
+    text-align: left;
+  }
+
+  .home-hero .feature-card {
+    flex: 1;
+    min-width: 260px;
+    background: rgba(255,255,255,0.92);
+    padding: 18px;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    box-shadow: 0 6px 18px rgba(0,0,0,0.06);
+  }
+
+  .home-hero .feature-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    background: rgba(17,24,39,0.05);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 10px;
+    color: var(--text-main);
+  }
+  .home-hero .feature-icon svg {
+    width: 24px;
+    height: 24px;
+    display: block;
+  }
+
+  .home-hero .feature-title {
+    margin-bottom: 6px;
+    font-weight: 800;
+    color: var(--text-main);
+  }
+
+  .home-hero .feature-desc {
+    color: var(--text-muted);
+    line-height: 1.65;
+    font-weight: 600;
+    font-size: 14px;
+  }
+
+  .home-hero .footer {
+    margin-top: 18px;
+    color: #94a3b8;
+    font-size: 13px;
+    font-weight: 700;
+  }
+</style>
+
+<div class="home-hero">
+  <main class="main-content">
+    <div class="hero-badge">
+      <span class="badge-dot"></span>
+      <span class="badge-text">Hot Offer</span>
+    </div>
+
+    <h1 class="hero-title">
+      Welcome to <span class="gradient-text">writo</span>
+    </h1>
+
+    <p class="hero-subtitle">
+      Earn rewards by completing simple digital tasks. Create an account, submit proofs, and withdraw your earnings fast.
+    </p>
+
+    <div class="action-card">
+      <p class="card-text">Get started by creating an account or logging in.</p>
+
+      <div class="btn-group">
+        <a href="{{ url_for('register') }}" class="hero-btn">
+          <!-- User-plus icon -->
+          <svg class="btn-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+            <circle cx="9" cy="7" r="4"/>
+            <path d="M19 8v6"/>
+            <path d="M22 11h-6"/>
+          </svg>
+          Create Account
+        </a>
+
+        <a href="{{ url_for('login') }}" class="hero-btn secondary">
+          <!-- Log-in icon -->
+          <svg class="btn-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/>
+            <path d="M10 17l5-5-5-5"/>
+            <path d="M15 12H3"/>
+          </svg>
+          Login Now
+        </a>
+      </div>
+    </div>
+
+    <div class="features">
+      <div class="feature-card">
+        <span class="feature-icon" aria-hidden="true">
+          <!-- Clipboard-check icon -->
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/>
+            <path d="M9 5a3 3 0 0 1 6 0"/>
+            <path d="M9 5h6"/>
+            <path d="M9 13l2 2 4-4"/>
+          </svg>
+        </span>
+        <h3 class="feature-title">1. Submit Tasks</h3>
+        <p class="feature-desc">
+          Use our system generated credentials to create accounts and submit proofs easily via QR code.
         </p>
-        
-        <div style="display: flex; gap: 20px; justify-content: center; flex-wrap: wrap;">
-            <a href="{{ url_for('login') }}" style="background: white; color: #764ba2; padding: 12px 30px; border-radius: 30px; text-decoration: none; font-weight: bold; font-size: 1.1rem; box-shadow: 0 4px 6px rgba(0,0,0,0.1); transition: transform 0.2s;">
-                Login Now
-            </a>
-            <a href="{{ url_for('register') }}" style="background: #ffc107; color: #333; padding: 12px 30px; border-radius: 30px; text-decoration: none; font-weight: bold; font-size: 1.1rem; box-shadow: 0 4px 6px rgba(0,0,0,0.1); transition: transform 0.2s;">
-                Create Account
-            </a>
-        </div>
+      </div>
+
+      <div class="feature-card">
+        <span class="feature-icon" aria-hidden="true">
+          <!-- Refresh-cw icon -->
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 12a9 9 0 0 0-15.6-6.4"/>
+            <path d="M3 12a9 9 0 0 0 15.6 6.4"/>
+            <path d="M5 6v3h3"/>
+            <path d="M19 18v-3h-3"/>
+          </svg>
+        </span>
+        <h3 class="feature-title">2. Auto Sync</h3>
+        <p class="feature-desc">
+          Our intelligent system automatically syncs your task status every time you login. No manual check needed.
+        </p>
+      </div>
+
+      <div class="feature-card">
+        <span class="feature-icon" aria-hidden="true">
+          <!-- Wallet icon -->
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M4 7h16a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V7z"/>
+            <path d="M4 7a2 2 0 0 1 2-2h12"/>
+            <path d="M18 12h4"/>
+            <circle cx="18" cy="12" r="1.2" fill="currentColor" stroke="none"/>
+          </svg>
+        </span>
+        <h3 class="feature-title">3. Get Paid</h3>
+        <p class="feature-desc">
+          Once confirmed, coins are added instantly. Withdraw your earnings via Bkash, Nagad, or Binance.
+        </p>
+      </div>
     </div>
 
-    <div style="display: flex; gap: 30px; justify-content: center; flex-wrap: wrap; text-align: left;">
-        
-        <div style="flex: 1; min-width: 250px; background: white; padding: 25px; border-radius: 10px; border: 1px solid #eee; box-shadow: 0 2px 5px rgba(0,0,0,0.05);">
-            <div style="font-size: 40px; margin-bottom: 10px;">📝</div>
-            <h3 style="color: #333; margin-bottom: 10px;">1. Submit Tasks</h3>
-            <p style="color: #666; line-height: 1.6;">
-                Use our system generated credentials to create accounts and submit proofs easily via QR code.
-            </p>
-        </div>
-
-        <div style="flex: 1; min-width: 250px; background: white; padding: 25px; border-radius: 10px; border: 1px solid #eee; box-shadow: 0 2px 5px rgba(0,0,0,0.05);">
-            <div style="font-size: 40px; margin-bottom: 10px;">🤖</div>
-            <h3 style="color: #333; margin-bottom: 10px;">2. Auto Sync</h3>
-            <p style="color: #666; line-height: 1.6;">
-                Our intelligent system automatically syncs your task status every time you login. No manual check needed.
-            </p>
-        </div>
-
-        <div style="flex: 1; min-width: 250px; background: white; padding: 25px; border-radius: 10px; border: 1px solid #eee; box-shadow: 0 2px 5px rgba(0,0,0,0.05);">
-            <div style="font-size: 40px; margin-bottom: 10px;">💸</div>
-            <h3 style="color: #333; margin-bottom: 10px;">3. Get Paid</h3>
-            <p style="color: #666; line-height: 1.6;">
-                Once confirmed, coins are added instantly. Withdraw your earnings via Bkash, Nagad, or Binance.
-            </p>
-        </div>
-
+    <div class="footer">
+      &copy; 2024 writo. All rights reserved.
     </div>
-
-    <div style="margin-top: 50px; color: #888; font-size: 14px;">
-        &copy; 2024 TaskMaster Pro. All rights reserved.
-    </div>
+  </main>
 </div>
 {% endblock %}
