@@ -171,11 +171,20 @@ def check_maintenance():
 @app.route('/')
 def home():
     if current_user.is_authenticated:
+        # Redirect based on Role
+        if current_user.is_admin:
+            return redirect(url_for('admin_dashboard'))
         return redirect(url_for('dashboard'))
     return render_template('index.html')
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
+    # If already logged in, redirect based on role
+    if current_user.is_authenticated:
+        if current_user.is_admin:
+            return redirect(url_for('admin_dashboard'))
+        return redirect(url_for('dashboard'))
+
     if request.method == 'POST':
         username = request.form.get('username')
         password = request.form.get('password')
@@ -190,7 +199,11 @@ def login():
 
             login_user(user, remember=remember)
 
-            # --- AUTO SYNC (1 Hour Cooldown) ---
+            # --- ADMIN CHECK ---
+            if user.is_admin:
+                return redirect(url_for('admin_dashboard'))
+
+            # --- AUTO SYNC FOR REGULAR USERS ---
             should_sync = False
             if user.last_auto_sync is None:
                 should_sync = True
@@ -234,9 +247,14 @@ def logout():
     logout_user()
     return redirect(url_for('login'))
 
+# --- USER DASHBOARD ---
 @app.route('/dashboard')
 @login_required
 def dashboard():
+    # If Admin tries to access User Dashboard, redirect to Admin Dashboard
+    if current_user.is_admin:
+        return redirect(url_for('admin_dashboard'))
+
     user_tasks = Task.query.filter_by(user_id=current_user.id).all()
     user_withdrawals = Withdrawal.query.filter_by(user_id=current_user.id).all()
 
@@ -255,6 +273,10 @@ def dashboard():
 @app.route('/submit', methods=['GET', 'POST'])
 @login_required
 def submit_task():
+    # Admin should not submit tasks ideally, or redirect them
+    if current_user.is_admin:
+        return redirect(url_for('admin_dashboard'))
+
     if get_setting('stop_task') == 'true':
         flash("⚠️ Task submission is currently PAUSED by Admin.")
         return redirect(url_for('dashboard'))
@@ -309,6 +331,8 @@ def submit_task():
 @app.route('/my_tasks')
 @login_required
 def my_tasks():
+    if current_user.is_admin:
+        return redirect(url_for('admin_dashboard'))
     tasks = Task.query.filter_by(user_id=current_user.id).order_by(Task.id.desc()).all()
     return render_template('my_tasks.html', tasks=tasks)
 
@@ -368,6 +392,9 @@ def refresh_status(task_id):
 @app.route('/withdraw', methods=['GET', 'POST'])
 @login_required
 def withdraw():
+    if current_user.is_admin:
+        return redirect(url_for('admin_dashboard'))
+
     if get_setting('stop_withdraw') == 'true':
         flash("🚫 Withdrawals are currently PAUSED by Admin.")
         return redirect(url_for('dashboard'))
@@ -431,7 +458,35 @@ def process_qr():
 @login_required
 def admin_panel():
     if not current_user.is_admin: return "Access Denied!", 403
-    return redirect(url_for('admin_users'))
+    return redirect(url_for('admin_dashboard'))
+
+# --- NEW ADMIN DASHBOARD ---
+@app.route('/admin/dashboard')
+@login_required
+def admin_dashboard():
+    # If a regular user tries to access admin dashboard, kick them to user dashboard
+    if not current_user.is_admin:
+        flash("🚫 Access Denied!")
+        return redirect(url_for('dashboard'))
+
+    # Statistics for Admin
+    total_users = User.query.count()
+    total_tasks = Task.query.count()
+    pending_withdrawals = Withdrawal.query.filter_by(status='pending').count()
+    
+    # Calculate Total User Balance
+    all_users = User.query.all()
+    total_user_balance = sum(u.coins for u in all_users)
+    
+    # Calculate Pending Withdraw Amount
+    pending_withdraw_amount = sum(w.amount for w in Withdrawal.query.filter_by(status='pending').all())
+
+    return render_template('admin_dashboard.html', 
+                           total_users=total_users,
+                           total_tasks=total_tasks,
+                           pending_withdrawals=pending_withdrawals,
+                           total_user_balance=total_user_balance,
+                           pending_withdraw_amount=pending_withdraw_amount)
 
 @app.route('/admin/system', methods=['GET', 'POST'])
 @login_required
