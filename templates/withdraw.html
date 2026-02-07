@@ -1,67 +1,403 @@
 {% extends "base.html" %}
 {% block content %}
-    <h2 style="color: #333; border-bottom: 2px solid #ddd; padding-bottom: 10px;">💸 Withdraw Funds</h2>
 
-    <div style="display: flex; gap: 30px; flex-wrap: wrap;">
+<style>
+  /* --- Compact + Mobile-friendly Withdraw Page --- */
+  .w-title{
+    font-size: 16px;
+    font-weight: 900;
+    color: #111827;
+    margin: 6px 0 12px;
+    letter-spacing: .2px;
+  }
 
-        <div style="flex: 1; min-width: 300px; background: #fff8e1; padding: 25px; border-radius: 8px; border: 1px solid #ffe082;">
-            <h3 style="margin-top: 0; color: #f57f17;">Request Payout</h3>
-            <p><strong>Available Balance:</strong> {{ current_user.coins }} Coins</p>
-            <p><strong>Minimum Limit:</strong> {{ min_amount }} Coins</p>
+  .w-layout{
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
 
-            {% if stop_withdraw %}
-                <div style="padding: 15px; background: #ffccbc; color: #bf360c; border-radius: 5px; text-align: center; font-weight: bold;">
-                    🚫 Withdrawals are currently disabled by Admin.
-                </div>
-            {% else %}
-                <form method="POST">
-                    <label style="font-weight: bold;">Amount (Coins):</label>
-                    <input type="number" name="amount" min="{{ min_amount }}" max="{{ current_user.coins }}" required placeholder="Enter amount">
+  @media (min-width: 900px){
+    .w-layout{
+      grid-template-columns: 360px 1fr;
+      align-items: start;
+      gap: 14px;
+    }
+  }
 
-                    <label style="font-weight: bold; margin-top: 15px; display: block;">Payment Method:</label>
-                    <select name="method" required>
-                        <option value="bkash">Bkash</option>
-                        <option value="nagad">Nagad</option>
-                        <option value="rocket">Rocket</option>
-                        <option value="binance">Binance (USDT)</option>
-                    </select>
+  .card{
+    border: 1px solid rgba(0,0,0,0.08);
+    border-radius: 14px;
+    background: rgba(255,255,255,0.92);
+    box-shadow: 0 8px 18px rgba(17,24,39,0.05);
+    overflow: hidden;
+  }
 
-                    <label style="font-weight: bold; margin-top: 15px; display: block;">Account Details:</label>
-                    <input type="text" name="account" required placeholder="Number or Wallet Address">
+  .card--warm{
+    background: rgba(255,248,225,0.75);
+    border-color: rgba(245,158,11,0.25);
+  }
 
-                    <button type="submit" class="btn" style="background-color: #ff8f00; width: 100%; margin-top: 20px; font-weight: bold;">Submit Request</button>
-                </form>
-            {% endif %}
-        </div>
+  .card-head{
+    padding: 12px 12px 10px;
+    border-bottom: 1px solid rgba(0,0,0,0.06);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+  }
 
-        <div style="flex: 2; min-width: 300px;">
-            <h3>📜 Withdrawal History</h3>
-            <table>
-                <thead>
-                    <tr>
-                        <th>Date</th>
-                        <th>Amount</th>
-                        <th>Method</th>
-                        <th>Account</th>
-                        <th>Status</th>
-                        <th>TXID</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for w in withdrawals %}
-                    <tr>
-                        <td>{{ w.date }}</td>
-                        <td style="font-weight: bold;">{{ w.amount }}</td>
-                        <td>{{ w.method }}</td>
-                        <td>{{ w.account_details }}</td>
-                        <td class="status-{{ w.status }}">{{ w.status.upper() }}</td>
-                        <td style="font-family: monospace; font-size: 12px;">{{ w.txid or '-' }}</td>
-                    </tr>
-                    {% else %}
-                    <tr><td colspan="6">No withdrawals yet.</td></tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
+  .card-title{
+    font-size: 13px;
+    font-weight: 900;
+    color: #111827;
+    letter-spacing: .2px;
+  }
+
+  .badge{
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 10px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 900;
+    border: 1px solid rgba(0,0,0,0.08);
+    background: rgba(0,0,0,0.03);
+    color: #374151;
+    white-space: nowrap;
+  }
+
+  .card-body{
+    padding: 12px;
+  }
+
+  .kv{
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 8px 12px;
+    padding: 10px;
+    border-radius: 12px;
+    background: rgba(255,255,255,0.55);
+    border: 1px solid rgba(0,0,0,0.06);
+    margin-bottom: 10px;
+  }
+
+  .kv .k{
+    font-size: 11px;
+    font-weight: 900;
+    color: #6b7280;
+    text-transform: uppercase;
+    letter-spacing: .2px;
+  }
+
+  .kv .v{
+    font-size: 12px;
+    font-weight: 900;
+    color: #111827;
+    text-align: right;
+  }
+
+  .notice{
+    padding: 10px 12px;
+    border-radius: 12px;
+    border: 1px solid rgba(239,68,68,0.20);
+    background: rgba(239,68,68,0.10);
+    color: #7a1d1d;
+    font-size: 12px;
+    font-weight: 900;
+    text-align: center;
+  }
+
+  /* Form */
+  .form{
+    display: grid;
+    gap: 10px;
+  }
+
+  .field label{
+    display: block;
+    font-size: 12px;
+    font-weight: 900;
+    color: #111827;
+    margin-bottom: 6px;
+  }
+
+  .field input,
+  .field select{
+    width: 100%;
+    padding: 10px 11px;
+    border-radius: 12px;
+    border: 1px solid rgba(0,0,0,0.12);
+    background: rgba(255,255,255,0.85);
+    font-size: 13px;
+    font-weight: 700;
+    color: #111827;
+    outline: none;
+  }
+
+  .field input::placeholder{ color: #9ca3af; font-weight: 600; }
+
+  .field input:focus,
+  .field select:focus{
+    border-color: rgba(37,99,235,0.55);
+    box-shadow: 0 0 0 3px rgba(37,99,235,0.12);
+  }
+
+  .submit-btn{
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+    padding: 11px 12px;
+    border-radius: 12px;
+    border: 1px solid rgba(0,0,0,0.10);
+    background: rgba(245,158,11,0.20);
+    color: #7a4b00;
+    font-size: 13px;
+    font-weight: 900;
+    cursor: pointer;
+    transition: transform .15s ease, background .15s ease;
+  }
+
+  .submit-btn:hover{
+    background: rgba(245,158,11,0.26);
+    transform: translateY(-1px);
+  }
+  .submit-btn:active{ transform: translateY(0); }
+
+  .submit-btn svg{
+    width: 18px;
+    height: 18px;
+  }
+
+  /* History table */
+  .history-head{
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+  }
+
+  .table{
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  .table th, .table td{
+    padding: 10px 12px;
+    border-bottom: 1px solid rgba(0,0,0,0.08);
+    text-align: left;
+    vertical-align: top;
+    font-size: 13px;
+  }
+
+  .table th{
+    background: rgba(0,0,0,0.03);
+    font-weight: 900;
+    color: #374151;
+    font-size: 12px;
+    letter-spacing: .2px;
+  }
+
+  .mono{
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    font-size: 12px;
+    word-break: break-word;
+  }
+
+  .amt{
+    font-weight: 900;
+  }
+
+  .status-pill{
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 900;
+    border: 1px solid rgba(0,0,0,0.08);
+    background: rgba(0,0,0,0.03);
+    letter-spacing: .3px;
+  }
+  .status-pill.status-approved,
+  .status-pill.status-confirmed{
+    color: #15803d;
+    background: rgba(34,197,94,0.10);
+    border-color: rgba(34,197,94,0.18);
+  }
+  .status-pill.status-pending{
+    color: #b45309;
+    background: rgba(245,158,11,0.12);
+    border-color: rgba(245,158,11,0.20);
+  }
+  .status-pill.status-rejected,
+  .status-pill.status-declined{
+    color: #b91c1c;
+    background: rgba(239,68,68,0.10);
+    border-color: rgba(239,68,68,0.18);
+  }
+
+  /* Mobile: table -> cards */
+  @media (max-width: 720px){
+    .table thead{ display: none; }
+    .table, .table tbody, .table tr, .table td{ display: block; width: 100%; }
+
+    .table tr{
+      border-top: 1px solid rgba(0,0,0,0.06);
+    }
+
+    .table td{
+      border-bottom: 1px solid rgba(0,0,0,0.06);
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+      font-size: 13px;
+    }
+
+    .table td::before{
+      content: attr(data-label);
+      flex: 0 0 86px;
+      font-size: 11px;
+      font-weight: 900;
+      color: #6b7280;
+      text-transform: uppercase;
+      letter-spacing: .2px;
+      margin-top: 2px;
+    }
+
+    .cell{
+      flex: 1;
+      text-align: right;
+    }
+
+    .cell.mono{
+      text-align: left;
+      margin-left: auto;
+      max-width: calc(100% - 98px);
+    }
+  }
+</style>
+
+<h2 class="w-title">Withdraw Funds</h2>
+
+<div class="w-layout">
+  <!-- Request Payout -->
+  <section class="card card--warm">
+    <div class="card-head">
+      <div class="card-title">Request Payout</div>
+      <span class="badge">Coins</span>
     </div>
+
+    <div class="card-body">
+      <div class="kv">
+        <div class="k">Available</div>
+        <div class="v">{{ current_user.coins }} Coins</div>
+
+        <div class="k">Minimum</div>
+        <div class="v">{{ min_amount }} Coins</div>
+      </div>
+
+      {% if stop_withdraw %}
+        <div class="notice">Withdrawals are currently disabled by Admin.</div>
+      {% else %}
+        <form method="POST" class="form">
+          <div class="field">
+            <label>Amount (Coins)</label>
+            <input
+              type="number"
+              name="amount"
+              min="{{ min_amount }}"
+              max="{{ current_user.coins }}"
+              required
+              placeholder="Enter amount"
+              inputmode="numeric"
+            >
+          </div>
+
+          <div class="field">
+            <label>Payment Method</label>
+            <select name="method" required>
+              <option value="bkash">Bkash</option>
+              <option value="nagad">Nagad</option>
+              <option value="rocket">Rocket</option>
+              <option value="binance">Binance (USDT)</option>
+            </select>
+          </div>
+
+          <div class="field">
+            <label>Account Details</label>
+            <input
+              type="text"
+              name="account"
+              required
+              placeholder="Number or Wallet Address"
+              autocomplete="off"
+            >
+          </div>
+
+          <button type="submit" class="submit-btn">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M12 2v14"></path>
+              <path d="M7 11l5 5 5-5"></path>
+              <path d="M4 22h16"></path>
+            </svg>
+            Submit Request
+          </button>
+        </form>
+      {% endif %}
+    </div>
+  </section>
+
+  <!-- Withdrawal History -->
+  <section class="card">
+    <div class="card-head">
+      <div class="history-head">
+        <div class="card-title">Withdrawal History</div>
+      </div>
+      <span class="badge">History</span>
+    </div>
+
+    <div class="card-body" style="padding: 0;">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Amount</th>
+            <th>Method</th>
+            <th>Account</th>
+            <th>Status</th>
+            <th>TXID</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for w in withdrawals %}
+          <tr>
+            <td data-label="Date"><div class="cell">{{ w.date }}</div></td>
+            <td data-label="Amount"><div class="cell amt">{{ w.amount }}</div></td>
+            <td data-label="Method"><div class="cell">{{ w.method }}</div></td>
+            <td data-label="Account"><div class="cell">{{ w.account_details }}</div></td>
+            <td data-label="Status">
+              <div class="cell">
+                <span class="status-pill status-{{ w.status }}">{{ w.status.upper() }}</span>
+              </div>
+            </td>
+            <td data-label="TXID">
+              <div class="cell mono">{{ w.txid or '-' }}</div>
+            </td>
+          </tr>
+          {% else %}
+          <tr>
+            <td data-label="Info"><div class="cell">No withdrawals yet.</div></td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+</div>
+
 {% endblock %}
