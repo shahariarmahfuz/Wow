@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block content %}
+    <h2>💸 Withdrawal Requests</h2>
+    
+    <div style="background: #eee; padding: 15px; margin-bottom: 20px; border-radius: 5px;">
+        <form method="POST" style="display: flex; gap: 10px; align-items: center;">
+            <label><strong>Minimum Withdrawal Limit:</strong></label>
+            <input type="number" name="min_withdraw" value="{{ min_withdraw }}" style="width: 80px;">
+            <button type="submit" class="btn">Update Setting</button>
+        </form>
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th>User</th>
+                <th>Amount</th>
+                <th>Method / Account</th>
+                <th>Date</th>
+                <th>Status</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for w in withdrawals %}
+            <tr>
+                <td><a href="{{ url_for('admin_user_profile', user_id=w.user_id) }}">{{ w.user.username }}</a></td>
+                <td style="font-weight: bold; color: #d35400;">{{ w.amount }}</td>
+                <td>{{ w.method }}<br><small>{{ w.account_details }}</small></td>
+                <td>{{ w.date }}</td>
+                <td class="status-{{ w.status }}">{{ w.status.upper() }}</td>
+                <td>
+                    {% if w.status == 'pending' %}
+                    <form method="POST" action="{{ url_for('withdraw_action', wid=w.id) }}" style="display: flex; gap: 5px;">
+                        <input type="text" name="txid" placeholder="TXID" style="width: 100px; font-size: 12px;">
+                        <button type="submit" name="action" value="approve" class="btn" style="background: green; padding: 5px;">✔</button>
+                        <button type="submit" name="action" value="reject" class="btn" style="background: red; padding: 5px;">✖</button>
+                    </form>
+                    {% else %}
+                        {{ w.txid }}
+                    {% endif %}
+                </td>
+            </tr>
+            {% else %}
+            <tr><td colspan="6">No withdrawals found.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% endblock %}

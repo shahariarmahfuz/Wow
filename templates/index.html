@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div style="text-align: center; padding: 50px 20px;">
+    
+    <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 60px 20px; border-radius: 15px; margin-bottom: 40px; box-shadow: 0 10px 25px rgba(0,0,0,0.1);">
+        <h1 style="font-size: 3rem; margin-bottom: 15px;">Welcome to TaskMaster</h1>
+        <p style="font-size: 1.2rem; margin-bottom: 30px; opacity: 0.9;">
+            The most trusted platform to earn rewards by completing simple digital tasks.
+        </p>
+        
+        <div style="display: flex; gap: 20px; justify-content: center; flex-wrap: wrap;">
+            <a href="{{ url_for('login') }}" style="background: white; color: #764ba2; padding: 12px 30px; border-radius: 30px; text-decoration: none; font-weight: bold; font-size: 1.1rem; box-shadow: 0 4px 6px rgba(0,0,0,0.1); transition: transform 0.2s;">
+                Login Now
+            </a>
+            <a href="{{ url_for('register') }}" style="background: #ffc107; color: #333; padding: 12px 30px; border-radius: 30px; text-decoration: none; font-weight: bold; font-size: 1.1rem; box-shadow: 0 4px 6px rgba(0,0,0,0.1); transition: transform 0.2s;">
+                Create Account
+            </a>
+        </div>
+    </div>
+
+    <div style="display: flex; gap: 30px; justify-content: center; flex-wrap: wrap; text-align: left;">
+        
+        <div style="flex: 1; min-width: 250px; background: white; padding: 25px; border-radius: 10px; border: 1px solid #eee; box-shadow: 0 2px 5px rgba(0,0,0,0.05);">
+            <div style="font-size: 40px; margin-bottom: 10px;">📝</div>
+            <h3 style="color: #333; margin-bottom: 10px;">1. Submit Tasks</h3>
+            <p style="color: #666; line-height: 1.6;">
+                Use our system generated credentials to create accounts and submit proofs easily via QR code.
+            </p>
+        </div>
+
+        <div style="flex: 1; min-width: 250px; background: white; padding: 25px; border-radius: 10px; border: 1px solid #eee; box-shadow: 0 2px 5px rgba(0,0,0,0.05);">
+            <div style="font-size: 40px; margin-bottom: 10px;">🤖</div>
+            <h3 style="color: #333; margin-bottom: 10px;">2. Auto Sync</h3>
+            <p style="color: #666; line-height: 1.6;">
+                Our intelligent system automatically syncs your task status every time you login. No manual check needed.
+            </p>
+        </div>
+
+        <div style="flex: 1; min-width: 250px; background: white; padding: 25px; border-radius: 10px; border: 1px solid #eee; box-shadow: 0 2px 5px rgba(0,0,0,0.05);">
+            <div style="font-size: 40px; margin-bottom: 10px;">💸</div>
+            <h3 style="color: #333; margin-bottom: 10px;">3. Get Paid</h3>
+            <p style="color: #666; line-height: 1.6;">
+                Once confirmed, coins are added instantly. Withdraw your earnings via Bkash, Nagad, or Binance.
+            </p>
+        </div>
+
+    </div>
+
+    <div style="margin-top: 50px; color: #888; font-size: 14px;">
+        &copy; 2024 TaskMaster Pro. All rights reserved.
+    </div>
+</div>
+{% endblock %}

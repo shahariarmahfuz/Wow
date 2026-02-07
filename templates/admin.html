@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+{% block content %}
+    <h2 style="color: #d9534f; border-bottom: 2px solid #ddd; padding-bottom: 10px;">🛡 Admin Panel</h2>
+
+    <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; border: 1px solid #ddd; margin-bottom: 30px;">
+        <h4 style="margin: 0 0 10px 0;">⚙️ System Settings</h4>
+        <form method="POST" action="{{ url_for('admin_settings') }}" style="display: flex; gap: 10px; align-items: center;">
+            <label>Minimum Withdrawal (Coins):</label>
+            <input type="number" name="min_withdraw" value="{{ min_withdraw }}" style="width: 100px; margin: 0;">
+            <button type="submit" class="btn" style="background-color: #6c757d;">Update</button>
+        </form>
+    </div>
+
+    <h3 style="color: #f0ad4e;">⏳ Pending Withdrawals</h3>
+    <div style="overflow-x: auto; margin-bottom: 30px;">
+        <table>
+            <thead>
+                <tr>
+                    <th>User</th>
+                    <th>Amount</th>
+                    <th>Method</th>
+                    <th>Account</th>
+                    <th>Date</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for w in withdrawals %}
+                <tr>
+                    <td>{{ w.user.username }}</td>
+                    <td style="font-weight: bold; color: #d35400;">{{ w.amount }}</td>
+                    <td>{{ w.method }}</td>
+                    <td>{{ w.account_details }}</td>
+                    <td>{{ w.date }}</td>
+                    <td>
+                        <form method="POST" action="{{ url_for('withdraw_action', wid=w.id) }}" style="display: flex; gap: 5px;">
+                            <input type="text" name="txid" placeholder="TXID (Optional)" style="width: 120px; padding: 5px; font-size: 12px; margin: 0;">
+                            <button type="submit" name="action" value="approve" class="btn" style="background: #28a745; padding: 5px 10px;">✔</button>
+                            <button type="submit" name="action" value="reject" class="btn" style="background: #dc3545; padding: 5px 10px;">✖</button>
+                        </form>
+                    </td>
+                </tr>
+                {% else %}
+                <tr><td colspan="6">No pending requests.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <div style="background: #fff; padding: 25px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); margin-bottom: 30px;">
+        <h3 style="margin-top: 0;">➕ Add Task to User</h3>
+        <form method="POST">
+            <div style="display: flex; gap: 20px; align-items: flex-end; flex-wrap: wrap;">
+                <div style="flex: 1; min-width: 200px;">
+                    <label style="font-weight: bold;">Select User:</label>
+                    <select name="user_id" required>
+                        {% for user in users %}
+                            <option value="{{ user.id }}">{{ user.username }} (ID: {{ user.id }})</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div style="flex: 2; min-width: 250px;">
+                    <label style="font-weight: bold;">Task ID:</label>
+                    <input type="text" name="task_id" placeholder="Paste Task ID" required>
+                </div>
+                <button type="submit" class="btn" style="background-color: #d9534f;">Check & Add</button>
+            </div>
+        </form>
+    </div>
+
+    <h3>📋 Recent Tasks Log</h3>
+    <div style="overflow-x: auto;">
+        <table>
+            <thead>
+                <tr>
+                    <th>User</th>
+                    <th>Task ID</th>
+                    <th>Status</th>
+                    <th>Added Time</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for task in tasks %}
+                <tr>
+                    <td>{{ task.owner.username }}</td>
+                    <td>{{ task.external_task_id }}</td>
+                    <td class="status-{{ task.status }}">{{ task.status.upper() }}</td>
+                    <td>{{ task.added_time }}</td>
+                    <td><a href="{{ url_for('refresh_status', task_id=task.id) }}" class="btn" style="font-size: 12px; padding: 5px 10px;">Refresh</a></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% endblock %}

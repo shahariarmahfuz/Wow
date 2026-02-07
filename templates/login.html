@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div style="max-width: 400px; margin: 50px auto; padding: 30px; border: 1px solid #ddd; border-radius: 8px; background: #fff; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
+
+    <h2 style="text-align: center; color: #333; margin-bottom: 20px;">User Login</h2>
+
+    <form method="POST" action="{{ url_for('login') }}">
+        <div style="margin-bottom: 15px;">
+            <label for="username" style="font-weight: bold; display: block; margin-bottom: 5px;">Username</label>
+            <input type="text" name="username" id="username" required placeholder="Enter your username" 
+                   style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 5px;">
+        </div>
+
+        <div style="margin-bottom: 15px;">
+            <label for="password" style="font-weight: bold; display: block; margin-bottom: 5px;">Password</label>
+            <input type="password" name="password" id="password" required placeholder="Enter your password" 
+                   style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 5px;">
+        </div>
+
+        <div style="margin-bottom: 20px; display: flex; align-items: center;">
+            <input type="checkbox" name="remember" id="remember" style="width: auto; margin-right: 10px;">
+            <label for="remember" style="color: #555; cursor: pointer;">Remember me for 30 days</label>
+        </div>
+
+        <button type="submit" class="btn" style="width: 100%; font-size: 16px; padding: 10px;">Login</button>
+    </form>
+
+    <p style="text-align: center; margin-top: 15px;">
+        Don't have an account? <a href="{{ url_for('register') }}" style="color: #007bff; text-decoration: none;">Register here</a>
+    </p>
+</div>
+{% endblock %}

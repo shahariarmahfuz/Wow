@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block content %}
+    <h2>User Dashboard</h2>
+    <div style="display: flex; gap: 20px; flex-wrap: wrap; margin-bottom: 30px;">
+        <div style="flex: 1; min-width: 200px; background: #e3f2fd; padding: 20px; border-radius: 8px; text-align: center;">
+            <h3 style="margin: 0; color: #0277bd;">Active Balance</h3>
+            <h1 style="margin: 10px 0;">{{ active_balance }}</h1>
+            <small>Available to Withdraw</small>
+        </div>
+
+        <div style="flex: 1; min-width: 200px; background: #fff3cd; padding: 20px; border-radius: 8px; text-align: center;">
+            <h3 style="margin: 0; color: #856404;">Hold Balance</h3>
+            <h1 style="margin: 10px 0;">{{ hold_balance }}</h1>
+            <small>Pending Tasks * 10</small>
+        </div>
+
+        <div style="flex: 1; min-width: 200px; background: #d4edda; padding: 20px; border-radius: 8px; text-align: center;">
+            <h3 style="margin: 0; color: #155724;">Total Earned</h3>
+            <h1 style="margin: 10px 0;">{{ total_earned }}</h1>
+            <small>Lifetime Earnings</small>
+        </div>
+
+        <div style="flex: 1; min-width: 200px; background: #f8d7da; padding: 20px; border-radius: 8px; text-align: center;">
+            <h3 style="margin: 0; color: #721c24;">Total Withdrawn</h3>
+            <h1 style="margin: 10px 0;">{{ total_withdrawn }}</h1>
+            <small>Approved + Pending</small>
+        </div>
+    </div>
+    <hr>
+    <h3>At a Glance</h3>
+    <p>Total Tasks Submitted: <strong>{{ total }}</strong></p>
+{% endblock %}

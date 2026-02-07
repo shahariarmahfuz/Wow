@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block content %}
+    <h2>➕ Add Custom Task</h2>
+    <div style="background: white; padding: 30px; border: 1px solid #ddd; max-width: 600px;">
+        <form method="POST">
+            <label><strong>Select User:</strong></label>
+            <select name="user_id" required style="width: 100%; padding: 10px; margin-bottom: 15px;">
+                {% for user in users %}
+                <option value="{{ user.id }}">{{ user.username }} (ID: {{ user.id }})</option>
+                {% endfor %}
+            </select>
+
+            <label><strong>Task ID:</strong></label>
+            <input type="text" name="task_id" placeholder="Paste Task ID" required style="width: 100%; padding: 10px; margin-bottom: 20px;">
+
+            <button type="submit" class="btn" style="width: 100%;">Check API & Add Task</button>
+        </form>
+    </div>
+{% endblock %}

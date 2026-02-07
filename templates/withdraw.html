@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% block content %}
+    <h2 style="color: #333; border-bottom: 2px solid #ddd; padding-bottom: 10px;">💸 Withdraw Funds</h2>
+
+    <div style="display: flex; gap: 30px; flex-wrap: wrap;">
+
+        <div style="flex: 1; min-width: 300px; background: #fff8e1; padding: 25px; border-radius: 8px; border: 1px solid #ffe082;">
+            <h3 style="margin-top: 0; color: #f57f17;">Request Payout</h3>
+            <p><strong>Available Balance:</strong> {{ current_user.coins }} Coins</p>
+            <p><strong>Minimum Limit:</strong> {{ min_amount }} Coins</p>
+
+            {% if stop_withdraw %}
+                <div style="padding: 15px; background: #ffccbc; color: #bf360c; border-radius: 5px; text-align: center; font-weight: bold;">
+                    🚫 Withdrawals are currently disabled by Admin.
+                </div>
+            {% else %}
+                <form method="POST">
+                    <label style="font-weight: bold;">Amount (Coins):</label>
+                    <input type="number" name="amount" min="{{ min_amount }}" max="{{ current_user.coins }}" required placeholder="Enter amount">
+
+                    <label style="font-weight: bold; margin-top: 15px; display: block;">Payment Method:</label>
+                    <select name="method" required>
+                        <option value="bkash">Bkash</option>
+                        <option value="nagad">Nagad</option>
+                        <option value="rocket">Rocket</option>
+                        <option value="binance">Binance (USDT)</option>
+                    </select>
+
+                    <label style="font-weight: bold; margin-top: 15px; display: block;">Account Details:</label>
+                    <input type="text" name="account" required placeholder="Number or Wallet Address">
+
+                    <button type="submit" class="btn" style="background-color: #ff8f00; width: 100%; margin-top: 20px; font-weight: bold;">Submit Request</button>
+                </form>
+            {% endif %}
+        </div>
+
+        <div style="flex: 2; min-width: 300px;">
+            <h3>📜 Withdrawal History</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Amount</th>
+                        <th>Method</th>
+                        <th>Account</th>
+                        <th>Status</th>
+                        <th>TXID</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for w in withdrawals %}
+                    <tr>
+                        <td>{{ w.date }}</td>
+                        <td style="font-weight: bold;">{{ w.amount }}</td>
+                        <td>{{ w.method }}</td>
+                        <td>{{ w.account_details }}</td>
+                        <td class="status-{{ w.status }}">{{ w.status.upper() }}</td>
+                        <td style="font-family: monospace; font-size: 12px;">{{ w.txid or '-' }}</td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="6">No withdrawals yet.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+{% endblock %}

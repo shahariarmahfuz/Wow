@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block content %}
+    <h2>👥 User Management</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Username</th>
+                <th>Balance</th>
+                <th>Status</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for user in users %}
+            <tr>
+                <td>{{ user.id }}</td>
+                <td><a href="{{ url_for('admin_user_profile', user_id=user.id) }}" style="font-weight: bold;">{{ user.username }}</a></td>
+                <td>{{ user.coins }}</td>
+                <td>
+                    {% if user.is_banned %} <span class="status-banned">BANNED</span>
+                    {% else %} <span class="status-confirmed">Active</span> {% endif %}
+                </td>
+                <td>
+                    <a href="{{ url_for('admin_user_profile', user_id=user.id) }}" class="btn">View Profile</a>
+                    {% if not user.is_admin %}
+                        {% if user.is_banned %}
+                            <a href="{{ url_for('ban_user', user_id=user.id, action='unban') }}" class="btn" style="background: green;">Unban</a>
+                        {% else %}
+                            <a href="{{ url_for('ban_user', user_id=user.id, action='ban') }}" class="btn" style="background: red;">Ban</a>
+                        {% endif %}
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% endblock %}

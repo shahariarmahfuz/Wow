@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div style="max-width: 400px; margin: 50px auto; padding: 30px; border: 1px solid #ddd; border-radius: 8px; background: #fff; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
+    
+    <h2 style="text-align: center; color: #333; margin-bottom: 20px;">Create Account</h2>
+    
+    <form method="POST" action="{{ url_for('register') }}">
+        <div style="margin-bottom: 15px;">
+            <label style="font-weight: bold; display: block; margin-bottom: 5px;">Choose Username</label>
+            <input type="text" name="username" required placeholder="Username" 
+                   style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 5px;">
+        </div>
+
+        <div style="margin-bottom: 20px;">
+            <label style="font-weight: bold; display: block; margin-bottom: 5px;">Choose Password</label>
+            <input type="password" name="password" required placeholder="Password" 
+                   style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 5px;">
+        </div>
+
+        <button type="submit" class="btn" style="width: 100%; font-size: 16px; padding: 10px; background-color: #17a2b8;">Register</button>
+    </form>
+
+    <p style="text-align: center; margin-top: 15px;">
+        Already have an account? <a href="{{ url_for('login') }}" style="color: #007bff; text-decoration: none;">Login here</a>
+    </p>
+</div>
+{% endblock %}

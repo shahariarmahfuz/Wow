@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block content %}
+    <h2>⚙️ System Control</h2>
+    <div style="background: white; padding: 30px; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); max-width: 600px;">
+        
+        <form method="POST">
+            <div style="margin-bottom: 20px; padding: 15px; border: 1px solid #ddd; border-radius: 5px; background: #fff3cd;">
+                <label style="font-weight: bold; font-size: 18px; display: flex; align-items: center;">
+                    <input type="checkbox" name="maintenance_mode" {% if maintenance_mode %}checked{% endif %} style="width: 20px; height: 20px; margin-right: 10px;">
+                    🚧 Enable Maintenance Mode
+                </label>
+                <p style="margin: 5px 0 0 35px; color: #666; font-size: 14px;">
+                    If enabled, users will see a maintenance page. Only Admins can access the site.
+                </p>
+            </div>
+
+            <div style="margin-bottom: 20px; padding: 15px; border: 1px solid #ddd; border-radius: 5px; background: #e2e3e5;">
+                <label style="font-weight: bold; font-size: 18px; display: flex; align-items: center;">
+                    <input type="checkbox" name="stop_task" {% if stop_task %}checked{% endif %} style="width: 20px; height: 20px; margin-right: 10px;">
+                    🛑 Stop Task Receiving
+                </label>
+                <p style="margin: 5px 0 0 35px; color: #666; font-size: 14px;">
+                    Users won't be able to submit new tasks, but can login and check history.
+                </p>
+            </div>
+
+            <div style="margin-bottom: 20px; padding: 15px; border: 1px solid #ddd; border-radius: 5px; background: #d1ecf1;">
+                <label style="font-weight: bold; font-size: 18px; display: flex; align-items: center;">
+                    <input type="checkbox" name="stop_withdraw" {% if stop_withdraw %}checked{% endif %} style="width: 20px; height: 20px; margin-right: 10px;">
+                    💸 Stop Withdrawals
+                </label>
+                <p style="margin: 5px 0 0 35px; color: #666; font-size: 14px;">
+                    Users won't be able to request new payouts.
+                </p>
+            </div>
+
+            <button type="submit" class="btn" style="width: 100%; padding: 15px; font-size: 18px;">💾 Save Settings</button>
+        </form>
+    </div>
+{% endblock %}

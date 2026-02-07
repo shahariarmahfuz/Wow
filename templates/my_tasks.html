@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block content %}
+    <h2>My Task History</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Task ID</th>
+                <th>Details</th>
+                <th>Status</th>
+                <th>Added</th>
+                <th>Last Synced</th> <th>Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for task in tasks %}
+            <tr>
+                <td>{{ task.external_task_id }}</td>
+                <td style="font-size: 11px; font-family: monospace;">
+                    E: {{ task.job_proof.split(':')[0] }}<br>
+                    P: {{ task.job_proof.split(':')[1] }}
+                </td>
+                <td class="status-{{ task.status }}">{{ task.status.upper() }}</td>
+                <td>{{ task.added_time }}</td>
+                <td style="font-size: 12px; color: #555;">{{ task.last_synced or 'Never' }}</td>
+                <td>
+                    {% if task.status == 'confirmed' %}
+                        <span class="btn" style="background: grey; cursor: default; font-size: 12px; padding: 5px;">Locked</span>
+                    {% else %}
+                        <a href="{{ url_for('refresh_status', task_id=task.id) }}" class="btn" style="font-size: 12px; padding: 5px;">Sync</a>
+                    {% endif %}
+                </td>
+            </tr>
+            {% else %}
+            <tr><td colspan="6">No tasks found.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% endblock %}
