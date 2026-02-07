@@ -1,498 +1,589 @@
 {% extends "base.html" %}
 
 {% block content %}
+<!-- OTPAuth for client-side TOTP preview -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/otpauth/9.1.2/otpauth.umd.min.js"></script>
 
+<!-- Google Font (optional, matches your sample design) -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Raleway:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
 <style>
-  /* --- Compact + Mobile-friendly Submit Task --- */
-  .st-wrap{
-    max-width: 600px;
-    margin: 14px auto;
+  :root{
+    --bg-body: #ffffff;
+    --card-bg: #ffffff;
+    --text-main: #111827;
+    --text-muted: #6b7280;
+    --border: #e5e7eb;
+    --shadow: 0 18px 40px rgba(0,0,0,0.12);
+    --gradient-btn: linear-gradient(to right, #f59e0b, #ef4444);
+    --input-bg: #ffffff;
+    --danger: #ef4444;
+    --success: #10b981;
+    --info: #1e88e5;
   }
 
-  .st-card{
-    border: 1px solid rgba(0,0,0,0.08);
-    border-radius: 14px;
-    background: rgba(255,255,255,0.92);
-    box-shadow: 0 8px 18px rgba(17,24,39,0.05);
+  *{ box-sizing:border-box; margin:0; padding:0; }
+  body{
+    font-family: 'Raleway', sans-serif;
+    background-color: var(--bg-body);
+    color: var(--text-main);
+    min-height: 100vh;
+    position: relative;
+  }
+
+  /* --- GRID BACKGROUND --- */
+  .grid-wrapper{
+    position: fixed;
+    inset: 0;
+    height: 100vh;
+    z-index: -1;
+    pointer-events: none;
+    background-color: #ffffff;
     overflow: hidden;
   }
-
-  .st-head{
-    padding: 12px 14px;
-    border-bottom: 1px solid rgba(0,0,0,0.06);
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 10px;
+  .grid-background{
+    position: absolute;
+    inset: 0;
+    background-image:
+      linear-gradient(to right, rgba(0, 0, 0, 0.04) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(0, 0, 0, 0.04) 1px, transparent 1px);
+    background-size: 20px 20px;
+    -webkit-mask-image: linear-gradient(to bottom, black 50%, transparent 100%);
+    mask-image: linear-gradient(to bottom, black 50%, transparent 100%);
   }
 
-  .st-title{
-    font-size: 15px;
-    font-weight: 900;
-    color: #111827;
-    letter-spacing: .2px;
-    margin: 0;
-  }
-
-  .st-badge{
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    padding: 5px 10px;
-    border-radius: 999px;
-    font-size: 11px;
-    font-weight: 900;
-    border: 1px solid rgba(0,0,0,0.08);
-    background: rgba(0,0,0,0.03);
-    color: #374151;
-    white-space: nowrap;
-  }
-
-  .st-body{
-    padding: 14px;
-  }
-
-  /* Notice blocks */
-  .notice{
-    padding: 12px 12px;
-    border-radius: 12px;
-    border: 1px solid rgba(245,158,11,0.25);
-    background: rgba(255,243,205,0.75);
-    color: #7a4b00;
-    font-size: 12px;
-    font-weight: 800;
-    text-align: center;
-  }
-
-  .notice h3{
-    font-size: 13px;
-    font-weight: 900;
-    margin: 0 0 6px;
-    color: #7a4b00;
-  }
-
-  /* Credentials */
-  .cred{
-    border: 1px solid rgba(30,136,229,0.22);
-    background: rgba(227,242,253,0.65);
-    border-radius: 14px;
-    padding: 12px;
-    margin-bottom: 12px;
-  }
-
-  .cred-head{
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 10px;
-    padding-bottom: 8px;
-    margin-bottom: 10px;
-    border-bottom: 1px solid rgba(30,136,229,0.18);
-  }
-
-  .cred-title{
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 12px;
-    font-weight: 900;
-    color: #0b4fa7;
-    letter-spacing: .2px;
-    margin: 0;
-  }
-
-  .cred-grid{
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: 10px;
-  }
-
-  @media (min-width: 520px){
-    .cred-grid{
-      grid-template-columns: 1fr 1fr;
-    }
-  }
-
-  .kv{
-    display: grid;
-    gap: 6px;
-  }
-
-  .kv label{
-    font-size: 11px;
-    font-weight: 900;
-    color: #374151;
-    letter-spacing: .2px;
-    text-transform: uppercase;
-  }
-
-  .mono-box{
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 10px;
-    padding: 10px 10px;
-    border-radius: 12px;
-    border: 1px solid rgba(0,0,0,0.12);
+  /* --- TOP NAVBAR --- */
+  .top-nav{
+    position: fixed; top:0; left:0; width:100%; height:60px;
+    display:flex; justify-content:space-between; align-items:center;
+    padding:0 20px;
     background: rgba(255,255,255,0.85);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid rgba(0,0,0,0.08);
+    z-index: 100;
   }
-
-  .mono{
-    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-    font-size: 13px;
+  .nav-brand{
+    font-size: 18px;
     font-weight: 800;
-    color: #111827;
-    word-break: break-word;
-    line-height: 1.2;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+  .fb-btn{
+    display:flex;
+    align-items:center;
+    text-decoration:none;
+    color: var(--text-main);
+    padding: 5px 12px;
+    background: rgba(0,0,0,0.05);
+    border-radius: 30px;
+    transition: background 0.2s;
+    max-width: 100%;
+  }
+  .fb-btn:hover{ background: rgba(0,0,0,0.1); }
+  .fb-icon-svg{
+    width:20px; height:20px; color:#1877F2; margin-right:8px; flex-shrink:0;
+  }
+  .fb-name{
+    font-size:14px; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  }
+  @media (max-width: 380px){
+    .top-nav{ padding: 0 10px; }
+    .nav-brand{ font-size: 16px; }
+    .fb-btn{ padding: 4px 10px; max-width: 150px; }
+    .fb-name{ font-size: 12px; }
+    .fb-icon-svg{ width: 16px; height: 16px; margin-right: 5px; }
   }
 
-  .cred-warning{
+  /* --- MAIN CONTENT --- */
+  .main-content{
+    padding-top: 90px;
+    padding-bottom: 100px;
+    padding-left: 20px;
+    padding-right: 20px;
+    max-width: 900px;
+    margin: 0 auto;
+  }
+  .page-title{
+    font-size: 2.5rem;
+    font-weight: 800;
+    margin-bottom: 25px;
+    color: var(--text-main);
+    text-align: center;
+  }
+
+  /* Card Styles */
+  .dashboard-card{
+    width: 100%;
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    box-shadow: var(--shadow);
+    padding: 24px;
+    margin-bottom: 20px;
+  }
+  .dashboard-card h3{
+    margin-top: 0;
+    margin-bottom: 15px;
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--text-main);
+    border-bottom: 1px solid #f3f4f6;
+    padding-bottom: 10px;
+  }
+
+  .muted{
+    margin:0;
+    font-size: 15px;
+    color: var(--text-muted);
+  }
+
+  /* Alerts */
+  .alert{
     margin-top: 10px;
-    font-size: 11px;
-    font-weight: 900;
-    color: #b91c1c;
+    padding: 10px;
+    border-radius: 6px;
+    font-weight: 600;
+    font-size: 14px;
+  }
+  .alert-danger{ color: var(--danger); background:#fef2f2; }
+  .alert-success{ color: var(--success); background:#ecfdf5; }
+  .alert-info{ color: #0b4fa7; background: rgba(227,242,253,0.65); }
+
+  /* Form Elements */
+  .styled-input{
+    width: 100%;
+    height: 48px;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 0 16px;
+    font-size: 15px;
+    font-weight: 500;
+    background: var(--input-bg);
+    font-family: 'Raleway', sans-serif;
+    outline: none;
+    transition: all .15s ease;
+    margin-bottom: 15px;
+  }
+  .styled-input:focus{
+    border-color: rgba(245,158,11,0.7);
+    box-shadow: 0 0 0 3px rgba(245,158,11,0.15);
   }
 
-  /* Form */
-  .form{
-    display: grid;
+  .primary-btn{
+    width: 100%;
+    height: 48px;
+    border: none;
+    border-radius: 4px;
+    background: var(--gradient-btn);
+    color: white;
+    font-size: 15px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    cursor: pointer;
+    transition: transform .06s ease, opacity .15s ease;
+    font-family: 'Raleway', sans-serif;
+  }
+  .primary-btn:hover{ opacity: 0.9; }
+  .primary-btn:active{ transform: translateY(1px); }
+
+  .primary-btn.is-disabled{
+    opacity: 0.55;
+    cursor: not-allowed;
+  }
+
+  /* Info list + copy */
+  .info-list{
+    margin-top: 10px;
+    padding: 0;
+    list-style: none;
+    color: var(--text-muted);
+  }
+  .info-list li{
+    margin-bottom: 12px;
+    font-size: 14px;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: #f9fafb;
+    padding: 10px 12px;
+    border-radius: 6px;
+    border: 1px solid #f3f4f6;
     gap: 10px;
   }
-
-  .field label{
-    display: block;
-    font-size: 12px;
-    font-weight: 900;
-    color: #111827;
-    margin-bottom: 6px;
+  .info-label{
+    display:block;
+    margin-bottom:2px;
+    font-size:12px;
+    color:#9ca3af;
   }
-
-  .field small{
-    display: block;
-    margin-top: 6px;
-    font-size: 11px;
+  .info-value{
+    color: var(--text-main);
     font-weight: 700;
-    color: #6b7280;
+    font-size: 15px;
+    word-break: break-all;
   }
 
-  .input,
-  .select{
-    width: 100%;
-    padding: 10px 11px;
-    border-radius: 12px;
-    border: 1px solid rgba(0,0,0,0.12);
-    background: rgba(255,255,255,0.90);
-    font-size: 13px;
-    font-weight: 700;
-    color: #111827;
-    outline: none;
-  }
-
-  .input::placeholder{ color: #9ca3af; font-weight: 600; }
-
-  .input:focus,
-  .select:focus{
-    border-color: rgba(37,99,235,0.55);
-    box-shadow: 0 0 0 3px rgba(37,99,235,0.12);
-  }
-
-  /* Upload area */
-  .upload{
-    padding: 12px;
-    border-radius: 14px;
-    border: 1px dashed rgba(0,0,0,0.22);
-    background: rgba(0,0,0,0.03);
-    text-align: center;
-  }
-
-  .upload-title{
-    display: inline-flex;
+  .copy-btn{
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #64748b;
+    padding: 6px;
+    border-radius: 4px;
+    transition: background 0.2s, color 0.2s;
+    display: flex;
     align-items: center;
-    gap: 8px;
-    font-size: 12px;
-    font-weight: 900;
-    color: #111827;
-    margin-bottom: 8px;
+    flex-shrink: 0;
   }
+  .copy-btn:hover{ background:#e2e8f0; color:#0f172a; }
+  .copy-btn svg{ width:18px; height:18px; }
 
-  .upload input[type="file"]{
+  /* BEAUTIFUL FILE UPLOAD CSS */
+  .file-upload-wrapper{
+    position: relative;
     width: 100%;
-    font-size: 12px;
-    font-weight: 700;
-  }
-
-  .upload-status{
-    display: block;
-    margin-top: 6px;
-    font-size: 11px;
-    font-weight: 900;
-    color: #6b7280;
-    min-height: 16px;
-  }
-  .upload-status.is-loading{ color: #1d4ed8; }
-  .upload-status.is-success{ color: #15803d; }
-  .upload-status.is-error{ color: #b91c1c; }
-
-  /* OTP display */
-  .otp{
-    display: none;
-    margin-top: 10px;
-    padding: 12px;
-    border-radius: 14px;
-    border: 1px solid rgba(30,136,229,0.22);
-    background: rgba(227,242,253,0.65);
-    text-align: center;
-  }
-
-  .otp h4{
-    margin: 0 0 8px;
-    font-size: 12px;
-    font-weight: 900;
-    color: #0b4fa7;
-  }
-
-  .otp-code{
-    font-size: 26px;
-    font-weight: 900;
-    letter-spacing: 4px;
-    color: #0b4fa7;
-    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-  }
-
-  .bar{
-    width: 100%;
-    height: 6px;
-    border-radius: 999px;
-    background: rgba(30,136,229,0.18);
-    margin-top: 10px;
-    overflow: hidden;
-  }
-
-  .bar > div{
-    height: 100%;
-    width: 100%;
-    border-radius: 999px;
-    background: rgba(30,136,229,0.70);
-    transition: width 1s linear;
-  }
-
-  .otp-note{
-    margin-top: 8px;
-    font-size: 11px;
-    font-weight: 900;
-    color: #15803d;
-  }
-
-  /* Submit button */
-  .submit-btn{
-    display: inline-flex;
+    height: 140px;
+    border: 2px dashed #cbd5e1;
+    border-radius: 8px;
+    display:flex;
+    flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 8px;
-    width: 100%;
-    padding: 11px 12px;
-    border-radius: 12px;
-    border: 1px solid rgba(0,0,0,0.10);
-    background: rgba(0,0,0,0.08);
-    color: #6b7280;
-    font-size: 13px;
-    font-weight: 900;
-    cursor: not-allowed;
-    user-select: none;
-  }
-
-  .submit-btn svg{
-    width: 18px;
-    height: 18px;
-  }
-
-  .submit-btn.is-ready{
-    background: rgba(34,197,94,0.18);
-    color: #0f6b2f;
+    background: #f8fafc;
+    transition: all 0.2s ease;
     cursor: pointer;
+    margin-bottom: 15px;
+    overflow: hidden;
+  }
+  .file-upload-wrapper:hover{
+    border-color: #f59e0b;
+    background: #fff7ed;
+  }
+  .file-upload-input{
+    position:absolute;
+    inset:0;
+    opacity:0;
+    cursor:pointer;
+    z-index:10;
+  }
+  .upload-icon-display{
+    width:40px;
+    height:40px;
+    color:#94a3b8;
+    margin-bottom: 8px;
+    transition: color 0.2s;
+  }
+  .file-upload-wrapper:hover .upload-icon-display{
+    color:#f59e0b;
+  }
+  .upload-text{
+    font-size:14px;
+    font-weight:600;
+    color:#64748b;
+    text-align:center;
+  }
+  .file-name-display{
+    margin-top:5px;
+    font-size:13px;
+    color:#16a34a;
+    font-weight:700;
+    text-align:center;
+    padding: 0 10px;
   }
 
-  .submit-btn.is-ready:hover{
-    background: rgba(34,197,94,0.24);
+  /* TOTP UI */
+  .totp-container{
+    display:flex;
+    align-items:center;
+    gap:15px;
+    margin: 10px 0;
+    flex-wrap: wrap;
+  }
+  .totp-display{
+    font-size: 32px;
+    font-weight: 800;
+    color: #0f172a;
+    letter-spacing: 3px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  }
+  .text-muted{
+    color: var(--text-muted);
+    font-size: 14px;
+    margin-bottom: 10px;
+    display: block;
+  }
+
+  /* Secret box */
+  .secret-box{
+    background:#f3f4f6;
+    padding: 12px;
+    border-radius: 6px;
+    margin-bottom: 20px;
+    display:flex;
+    justify-content: space-between;
+    align-items:center;
+    gap: 10px;
+  }
+  .secret-mono{
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    font-size: 14px;
+    word-break: break-all;
+    font-weight: 600;
+  }
+
+  /* --- Optional: Bottom space for your existing fixed bottom nav from base --- */
+  .pad-bottom{
+    height: 70px;
+  }
+
+  /* Small helper text */
+  .tiny{
+    font-size: 12px;
+    color: var(--text-muted);
   }
 </style>
 
-<div class="st-wrap">
-  <div class="st-card">
-    <div class="st-head">
-      <h2 class="st-title">Submit Account Task</h2>
-      <span class="st-badge">Submit</span>
-    </div>
-
-    <div class="st-body">
-      {% if stop_task %}
-        <div class="notice">
-          <h3>Submissions Paused</h3>
-          <div>We are not accepting new tasks at the moment.</div>
-        </div>
-      {% else %}
-        <div class="cred">
-          <div class="cred-head">
-            <h4 class="cred-title">
-              <!-- Lock icon -->
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="color:#0b4fa7">
-                <rect x="3" y="11" width="18" height="11" rx="2"></rect>
-                <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
-              </svg>
-              System Credentials
-            </h4>
-            <span class="st-badge" style="background: rgba(30,136,229,0.10); border-color: rgba(30,136,229,0.20); color:#0b4fa7;">
-              Use these
-            </span>
-          </div>
-
-          <div class="cred-grid">
-            <div class="kv">
-              <label>Password</label>
-              <div class="mono-box">
-                <span class="mono">{{ gen_pass }}</span>
-              </div>
-            </div>
-
-            <div class="kv">
-              <label>Recovery Email</label>
-              <div class="mono-box">
-                <span class="mono">{{ gen_recovery }}</span>
-              </div>
-            </div>
-          </div>
-
-          <div class="cred-warning">You must use these details. Do not use your own password.</div>
-        </div>
-
-        <form id="taskForm" class="form" method="POST" action="{{ url_for('submit_task') }}">
-          <input type="hidden" name="password" value="{{ gen_pass }}">
-          <input type="hidden" name="recovery_email" value="{{ gen_recovery }}">
-
-          <div class="field">
-            <label>Created Email Address</label>
-            <input
-              class="input"
-              type="email"
-              name="email"
-              required
-              placeholder="Enter the gmail you created..."
-              autocomplete="off"
-              inputmode="email"
-            >
-            <small>Type the email address you created using the credentials above.</small>
-          </div>
-
-          <div class="upload">
-            <div class="upload-title">
-              <!-- QR icon -->
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                <path d="M4 4h6v6H4z"></path>
-                <path d="M14 4h6v6h-6z"></path>
-                <path d="M4 14h6v6H4z"></path>
-                <path d="M14 14h2"></path>
-                <path d="M18 14h2v2"></path>
-                <path d="M14 18h2v2"></path>
-                <path d="M18 18h2"></path>
-              </svg>
-              Upload Authenticator QR
-            </div>
-
-            <input type="file" id="qr_file" accept="image/*" onchange="processQR()">
-            <small id="upload_status" class="upload-status">Waiting for QR image...</small>
-          </div>
-
-          <input type="hidden" name="secret_code" id="hidden_secret">
-
-          <div id="otp_display_area" class="otp">
-            <h4>Live Code</h4>
-            <div id="live_code" class="otp-code">--- ---</div>
-            <div class="bar"><div id="otp_progress"></div></div>
-            <div class="otp-note">Secret key extracted</div>
-          </div>
-
-          <button type="submit" id="submit_btn" class="submit-btn" disabled>
-            <!-- Send icon -->
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-              <path d="M22 2L11 13"></path>
-              <path d="M22 2l-7 20-4-9-9-4z"></path>
-            </svg>
-            Waiting for QR...
-          </button>
-        </form>
-      {% endif %}
-    </div>
-  </div>
+<div class="grid-wrapper">
+  <div class="grid-background"></div>
 </div>
+
+<!-- TOP NAV (kept as in your sample; update link/name if you want) -->
+<div class="top-nav">
+  <div class="nav-brand">xneko</div>
+  <a href="https://www.facebook.com/theeliteman" target="_blank" class="fb-btn" rel="noreferrer">
+    <svg class="fb-icon-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+      <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+    </svg>
+    <span class="fb-name">Mahfuz Ahmed</span>
+  </a>
+</div>
+
+<main class="main-content">
+  <h1 class="page-title">Submit Account Task</h1>
+
+  <!-- Status / Header card -->
+  <div class="dashboard-card">
+    <p class="muted">Logged in as: <b>{{ user.username }}</b></p>
+
+    {% if stop_task %}
+      <div class="alert alert-danger" style="margin-top:10px;">
+        Submissions Paused — We are not accepting new tasks at the moment.
+      </div>
+    {% else %}
+      <div class="alert alert-info" style="margin-top:10px;">
+        System credentials generated. You must use these details (do not use your own password).
+      </div>
+    {% endif %}
+  </div>
+
+  {% if not stop_task %}
+    <!-- Credentials card (matches your current variables) -->
+    <div class="dashboard-card">
+      <h3>System Credentials</h3>
+
+      <ul class="info-list">
+        <li>
+          <div>
+            <span class="info-label">Password</span>
+            <span class="info-value" id="copy-pass">{{ gen_pass }}</span>
+          </div>
+          <button class="copy-btn" onclick="copyToClipboard('copy-pass', this)" title="Copy Password" type="button">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 17.25v3.375c0 .621-.504 1.125-1.125 1.125h-9.75a1.125 1.125 0 01-1.125-1.125V7.875c0-.621.504-1.125 1.125-1.125H6.75a9.06 9.06 0 011.5.124m7.5 10.376h3.375c.621 0 1.125-.504 1.125-1.125V11.25c0-4.46-3.243-8.161-7.5-8.876a9.06 9.06 0 00-1.5-.124H9.375c-.621 0-1.125.504-1.125 1.125v3.5m7.5 10.375H9.375a1.125 1.125 0 01-1.125-1.125v-9.25m12 6.625v-1.875a3.375 3.375 0 00-3.375-3.375h-1.5" />
+            </svg>
+          </button>
+        </li>
+
+        <li>
+          <div>
+            <span class="info-label">Recovery Email</span>
+            <span class="info-value" id="copy-rec">{{ gen_recovery }}</span>
+          </div>
+          <button class="copy-btn" onclick="copyToClipboard('copy-rec', this)" title="Copy Recovery Email" type="button">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 17.25v3.375c0 .621-.504 1.125-1.125 1.125h-9.75a1.125 1.125 0 01-1.125-1.125V7.875c0-.621.504-1.125 1.125-1.125H6.75a9.06 9.06 0 011.5.124m7.5 10.376h3.375c.621 0 1.125-.504 1.125-1.125V11.25c0-4.46-3.243-8.161-7.5-8.876a9.06 9.06 0 00-1.5-.124H9.375c-.621 0-1.125.504-1.125 1.125v3.5m7.5 10.375H9.375a1.125 1.125 0 01-1.125-1.125v-9.25m12 6.625v-1.875a3.375 3.375 0 00-3.375-3.375h-1.5" />
+            </svg>
+          </button>
+        </li>
+      </ul>
+
+      <div class="tiny" style="margin-top:8px; font-weight:700; color:#b91c1c;">
+        You must use these details. Do not use your own password.
+      </div>
+    </div>
+
+    <!-- Main submit card -->
+    <div class="dashboard-card">
+      <h3>Step 1: Enter Created Gmail</h3>
+
+      <form id="taskForm" method="POST" action="{{ url_for('submit_task') }}" onsubmit="return confirm('Are you sure you want to submit this task?');">
+        <input type="hidden" name="password" value="{{ gen_pass }}">
+        <input type="hidden" name="recovery_email" value="{{ gen_recovery }}">
+        <input type="hidden" name="secret_code" id="hidden_secret">
+
+        <input
+          class="styled-input"
+          type="email"
+          name="email"
+          required
+          placeholder="example@gmail.com"
+          autocomplete="off"
+          inputmode="email"
+        >
+
+        <h3 style="margin-top:20px;">Step 2: Upload Authenticator QR</h3>
+        <span class="text-muted">টিপস: QR যেন পরিষ্কার দেখা যায়—QR অংশটা zoom করে screenshot দিন।</span>
+
+        <div class="file-upload-wrapper">
+          <input
+            type="file"
+            id="qr_file"
+            class="file-upload-input"
+            accept="image/*"
+            required
+            onchange="handleFileSelected(this)"
+          >
+          <svg class="upload-icon-display" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 16.5V9.75m0 0l3 3m-3-3l-3 3M6.75 19.5a4.5 4.5 0 01-1.41-8.775 5.25 5.25 0 0110.233-2.33 3 3 0 013.758 3.848A3.752 3.752 0 0118 19.5H6.75z" />
+          </svg>
+          <p class="upload-text">Click to upload QR Screenshot</p>
+          <p id="file-name" class="file-name-display"></p>
+        </div>
+
+        <div id="upload_notice" class="alert alert-info" style="display:none; margin-top:0; margin-bottom:15px;">
+          Processing QR...
+        </div>
+
+        <!-- Secret (only shown after extraction) -->
+        <div id="secret_block" style="display:none;">
+          <h3>Extracted Secret Key</h3>
+          <div class="secret-box">
+            <span class="secret-mono" id="copy-secret"></span>
+            <button class="copy-btn" onclick="copyToClipboard('copy-secret', this)" title="Copy Secret" type="button">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 17.25v3.375c0 .621-.504 1.125-1.125 1.125h-9.75a1.125 1.125 0 01-1.125-1.125V7.875c0-.621.504-1.125 1.125-1.125H6.75a9.06 9.06 0 011.5.124m7.5 10.376h3.375c.621 0 1.125-.504 1.125-1.125V11.25c0-4.46-3.243-8.161-7.5-8.876a9.06 9.06 0 00-1.5-.124H9.375c-.621 0-1.125.504-1.125 1.125v3.5m7.5 10.375H9.375a1.125 1.125 0 01-1.125-1.125v-9.25m12 6.625v-1.875a3.375 3.375 0 00-3.375-3.375h-1.5" />
+              </svg>
+            </button>
+          </div>
+
+          <h3>Live Authenticator Code</h3>
+          <div class="totp-container">
+            <div class="totp-display" id="totp_code">------</div>
+            <button class="copy-btn" onclick="copyToClipboard('totp_code', this)" title="Copy Code" type="button">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 17.25v3.375c0 .621-.504 1.125-1.125 1.125h-9.75a1.125 1.125 0 01-1.125-1.125V7.875c0-.621.504-1.125 1.125-1.125H6.75a9.06 9.06 0 011.5.124m7.5 10.376h3.375c.621 0 1.125-.504 1.125-1.125V11.25c0-4.46-3.243-8.161-7.5-8.876a9.06 9.06 0 00-1.5-.124H9.375c-.621 0-1.125.504-1.125 1.125v3.5m7.5 10.375H9.375a1.125 1.125 0 01-1.125-1.125v-9.25m12 6.625v-1.875a3.375 3.375 0 00-3.375-3.375h-1.5" />
+              </svg>
+            </button>
+          </div>
+          <div class="tiny" id="totp_meta">Loading...</div>
+
+          <h3 style="margin-top:20px;">Step 3: Submit Task</h3>
+        </div>
+
+        <button type="submit" id="submit_btn" class="primary-btn is-disabled" disabled>
+          Waiting for QR...
+        </button>
+      </form>
+    </div>
+  {% endif %}
+
+  <div class="pad-bottom"></div>
+</main>
 
 <script>
   let otpIntervalId = null;
 
-  function setUploadStatus(text, state) {
-    const el = document.getElementById('upload_status');
-    el.classList.remove('is-loading', 'is-success', 'is-error');
-    if (state) el.classList.add(state);
-    el.textContent = text;
+  function setUploadNotice(kind, msg) {
+    const el = document.getElementById('upload_notice');
+    el.classList.remove('alert-danger', 'alert-success', 'alert-info');
+    el.style.display = 'block';
+
+    if (kind === 'danger') el.classList.add('alert-danger');
+    else if (kind === 'success') el.classList.add('alert-success');
+    else el.classList.add('alert-info');
+
+    el.textContent = msg;
+  }
+
+  function hideUploadNotice() {
+    const el = document.getElementById('upload_notice');
+    el.style.display = 'none';
   }
 
   function setSubmitReady(isReady) {
     const btn = document.getElementById('submit_btn');
     btn.disabled = !isReady;
-    btn.classList.toggle('is-ready', isReady);
-    btn.innerHTML = isReady
-      ? `
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <path d="M22 2L11 13"></path>
-          <path d="M22 2l-7 20-4-9-9-4z"></path>
-        </svg>
-        Submit Task
-      `
-      : `
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <path d="M22 2L11 13"></path>
-          <path d="M22 2l-7 20-4-9-9-4z"></path>
-        </svg>
-        Waiting for QR...
-      `;
+    btn.classList.toggle('is-disabled', !isReady);
+    btn.textContent = isReady ? 'Submit Task' : 'Waiting for QR...';
+  }
+
+  function handleFileSelected(input) {
+    const display = document.getElementById('file-name');
+    if (input.files && input.files[0]) {
+      display.innerText = "Selected: " + input.files[0].name;
+      processQR(); // auto process on select
+    } else {
+      display.innerText = "";
+    }
   }
 
   async function processQR() {
     const fileInput = document.getElementById('qr_file');
     if (!fileInput.files || fileInput.files.length === 0) return;
 
+    // reset UI
     setSubmitReady(false);
-    document.getElementById('otp_display_area').style.display = 'none';
     document.getElementById('hidden_secret').value = '';
+    document.getElementById('secret_block').style.display = 'none';
+    document.getElementById('copy-secret').innerText = '';
+    document.getElementById('totp_code').innerText = '------';
+    document.getElementById('totp_meta').innerText = 'Loading...';
+    hideUploadNotice();
 
     const formData = new FormData();
     formData.append("qr_file", fileInput.files[0]);
 
-    setUploadStatus("Extracting secret...", "is-loading");
+    setUploadNotice('info', 'Extracting secret from QR...');
 
     try {
-      const response = await fetch('/api/process_qr', { method: 'POST', body: formData });
+      const response = await fetch('/api/process_qr', {
+        method: 'POST',
+        body: formData
+      });
       const result = await response.json();
 
       if (result && result.success && result.secret) {
-        setUploadStatus("Secret found.", "is-success");
-        document.getElementById('hidden_secret').value = result.secret;
+        setUploadNotice('success', 'Secret extracted successfully.');
+        const secret = String(result.secret).trim();
 
-        startOTPGenerator(result.secret);
-        document.getElementById('otp_display_area').style.display = 'block';
+        document.getElementById('hidden_secret').value = secret;
+        document.getElementById('copy-secret').innerText = secret;
+
+        document.getElementById('secret_block').style.display = 'block';
+        startOTPGenerator(secret);
+
         setSubmitReady(true);
       } else {
         const err = (result && result.error) ? result.error : "Failed to extract secret.";
-        setUploadStatus(err, "is-error");
+        setUploadNotice('danger', err);
+        setSubmitReady(false);
       }
     } catch (e) {
-      setUploadStatus("Error processing QR.", "is-error");
+      setUploadNotice('danger', 'Error processing QR.');
+      setSubmitReady(false);
     }
   }
 
   function startOTPGenerator(secret) {
     try {
-      if (!window.OTPAuth) return;
+      if (!window.OTPAuth) {
+        document.getElementById('totp_meta').innerText = 'OTP library not loaded';
+        return;
+      }
 
       if (otpIntervalId) {
         clearInterval(otpIntervalId);
@@ -506,21 +597,42 @@
         secret: OTPAuth.Secret.fromBase32(secret)
       });
 
-      const liveCodeEl = document.getElementById('live_code');
-      const progressEl = document.getElementById('otp_progress');
+      const codeEl = document.getElementById('totp_code');
+      const metaEl = document.getElementById('totp_meta');
 
-      otpIntervalId = setInterval(() => {
+      const tick = () => {
         const token = totp.generate();
-        liveCodeEl.textContent = token.substring(0, 3) + " " + token.substring(3, 6);
+        codeEl.textContent = token;
 
         const epoch = Math.floor(Date.now() / 1000);
-        const progress = (epoch % 30) / 30 * 100;
-        progressEl.style.width = (100 - progress) + "%";
-      }, 1000);
+        const remaining = 30 - (epoch % 30);
+        metaEl.textContent = `Refresh in ${remaining}s (period 30s)`;
+      };
+
+      tick();
+      otpIntervalId = setInterval(tick, 1000);
     } catch (e) {
-      // silent
+      document.getElementById('totp_meta').innerText = 'Invalid secret / cannot generate';
     }
   }
-</script>
 
+  // Copy to Clipboard
+  function copyToClipboard(elementId, btnElement) {
+    const el = document.getElementById(elementId);
+    if (!el) return;
+
+    const textToCopy = (el.innerText || el.textContent || "").trim();
+    if (!textToCopy) return;
+
+    navigator.clipboard.writeText(textToCopy).then(() => {
+      const original = btnElement.innerHTML;
+      btnElement.innerHTML = `
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="#10b981" aria-hidden="true">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+        </svg>
+      `;
+      setTimeout(() => { btnElement.innerHTML = original; }, 1500);
+    });
+  }
+</script>
 {% endblock %}
